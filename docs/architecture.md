@@ -8,6 +8,8 @@
 
 > Workflow tone: **Dark** โดยใช้ทั้ง Mermaid theme configuration และ dark canvas/subgraph เพื่อให้พื้นหลังของภาพเป็นโทนเข้มชัดเจน ไม่ใช่เฉพาะสีของ node และเส้นเชื่อม
 
+> หมายเหตุ: GitHub อาจควบคุมพื้นหลังรอบนอกของ Markdown ตาม theme ของผู้ใช้งาน แต่ในตัว workflow จะมี dark canvas ครอบ diagram เพื่อให้ภาพหลักยังคงเป็นโทนเข้ม
+
 ```mermaid
 %%{init: {"theme": "base", "themeVariables": {"darkMode": true, "background": "#0d1117", "mainBkg": "#0d1117", "secondBkg": "#161b22", "primaryColor": "#161b22", "primaryTextColor": "#f0f6fc", "primaryBorderColor": "#58a6ff", "lineColor": "#8b949e", "secondaryColor": "#1f6feb", "tertiaryColor": "#21262d", "clusterBkg": "#0d1117", "clusterBorder": "#30363d", "edgeLabelBackground": "#161b22", "fontFamily": "Inter, Arial, sans-serif"}}}%%
 flowchart TD
