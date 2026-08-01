@@ -1,34 +1,28 @@
-# OpenClaw + OpenAI / GPT 5.x Operating Guide
+# How to Use OpenClaw with OpenAI GPT-5.x
 
 ![Documentation](https://img.shields.io/badge/type-documentation-blue)
-![AI Agent](https://img.shields.io/badge/focus-AI%20Agent-purple)
-![Security First](https://img.shields.io/badge/security-first-critical)
+![OpenClaw](https://img.shields.io/badge/platform-OpenClaw-purple)
+![OpenAI](https://img.shields.io/badge/provider-OpenAI-black)
 ![Language](https://img.shields.io/badge/language-Thai%20%7C%20English-lightgrey)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Security](https://img.shields.io/badge/security-first-critical)
 
-> คู่มือมาตรฐานสำหรับติดตั้ง กำหนดค่า ตรวจสอบสถานะ และใช้งาน **OpenClaw** ร่วมกับ **OpenAI / GPT 5.x** เพื่อสร้าง AI Agent สำหรับงานประจำ งานสรุปข้อมูล งานค้นเว็บ งานไฟล์ งาน Telegram และงาน Automation ผ่าน Cron
+> คู่มือมาตรฐานสำหรับติดตั้ง กำหนดค่า ตรวจสอบสถานะ และใช้งาน **OpenClaw** ร่วมกับ **OpenAI GPT-5.x** เพื่อสร้าง AI Agent สำหรับ Dashboard, Telegram, Web Search, File Workflow และ Cron Automation อย่างเป็นระบบ ปลอดภัย และควบคุมต้นทุนได้
 
 ---
 
 ## Table of Contents
 
 - [Overview](#overview)
-- [Use Cases](#use-cases)
+- [Repository Structure](#repository-structure)
+- [Who This Repository Is For](#who-this-repository-is-for)
+- [Core Use Cases](#core-use-cases)
 - [Architecture](#architecture)
-- [Requirements](#requirements)
 - [Quick Start](#quick-start)
-- [Installation](#installation)
-- [Dashboard and Gateway](#dashboard-and-gateway)
-- [OpenAI Model Configuration](#openai-model-configuration)
-- [Model Strategy](#model-strategy)
-- [Web Search](#web-search)
-- [Cron Automation](#cron-automation)
-- [File Workflow](#file-workflow)
-- [Prompt Pattern](#prompt-pattern)
-- [Cost and Rate-Limit Control](#cost-and-rate-limit-control)
-- [Security Checklist](#security-checklist)
-- [Troubleshooting](#troubleshooting)
-- [Command Cheat Sheet](#command-cheat-sheet)
-- [Recommended Repository Structure](#recommended-repository-structure)
+- [Documentation Map](#documentation-map)
+- [Operating Standards](#operating-standards)
+- [Security Baseline](#security-baseline)
+- [Troubleshooting First Steps](#troubleshooting-first-steps)
 - [Roadmap](#roadmap)
 - [Contributing](#contributing)
 - [License](#license)
@@ -37,627 +31,226 @@
 
 ## Overview
 
-**OpenClaw** คือระบบ AI Agent ที่รันบนเครื่องผู้ใช้หรือเครื่อง server ส่วนตัว โดยทำหน้าที่เป็น gateway ระหว่างผู้ใช้ เครื่องมือภายนอก และ model provider เช่น OpenAI
+**OpenClaw** ทำหน้าที่เป็น AI-agent gateway ระหว่างผู้ใช้ ช่องทางสื่อสาร เครื่องมือภายนอก และ model provider เช่น OpenAI โดย repository นี้จัดทำขึ้นเป็น **practical operating guide** สำหรับผู้ใช้ที่ต้องการนำ OpenClaw ไปใช้งานจริงหรือใช้สอนใน workshop
 
-Repository นี้เป็น **practical operating guide** สำหรับผู้ใช้ที่ต้องการนำ OpenClaw ไปใช้ในงานจริง โดยเน้นหลักการสำคัญ 5 เรื่อง:
+แนวทางของ repository นี้เน้น 5 เรื่องหลัก:
 
-1. ตั้งค่า model ให้ถูกต้อง
-2. เชื่อม OpenAI API อย่างปลอดภัย
-3. ใช้ Telegram / Dashboard / Cron อย่างเป็นระบบ
-4. ควบคุม token, cost, rate limit และ context overflow
-5. วางแนวปฏิบัติด้าน security ก่อนใช้งานจริง
+1. ติดตั้งและตรวจสอบ OpenClaw ให้พร้อมใช้งาน
+2. เชื่อม OpenAI provider อย่างปลอดภัย
+3. กำหนด model, fallback, alias และ gateway อย่างเป็นระบบ
+4. ใช้งาน Dashboard, Telegram, Web Search, File Workflow และ Cron Automation
+5. ควบคุม API key, token, cost, rate limit และ context overflow
 
 ---
 
-## Use Cases
+## Repository Structure
 
-| Use Case | Description | Recommended Model |
+```text
+.
+├── README.md
+├── LICENSE
+├── CHANGELOG.md
+├── CONTRIBUTING.md
+├── docs/
+│   ├── architecture.md
+│   ├── installation.md
+│   ├── model-configuration.md
+│   ├── security.md
+│   ├── troubleshooting.md
+│   └── cron-automation.md
+├── examples/
+│   ├── config/
+│   │   └── .env.example
+│   └── prompts/
+│       └── daily-brief.md
+└── .github/
+    └── PULL_REQUEST_TEMPLATE.md
+```
+
+| Path | Purpose |
+|---|---|
+| `README.md` | หน้าแรกของ repository และแผนที่การใช้งานทั้งหมด |
+| `docs/` | เอกสารปฏิบัติการแยกตามหัวข้อ เพื่อให้อ่านง่ายและ maintain ได้ |
+| `examples/config/.env.example` | ตัวอย่าง environment variables แบบไม่มี secret จริง |
+| `examples/prompts/` | ตัวอย่าง prompt สำหรับงานสอน งานทดลอง และ automation |
+| `.github/PULL_REQUEST_TEMPLATE.md` | Template ตรวจคุณภาพก่อน merge |
+| `CHANGELOG.md` | บันทึกการเปลี่ยนแปลงของ repository |
+| `CONTRIBUTING.md` | แนวทางการปรับปรุงเอกสารและส่ง PR |
+
+---
+
+## Who This Repository Is For
+
+| Audience | Use Case |
+|---|---|
+| ผู้เริ่มต้นใช้ AI Agent | ติดตั้ง OpenClaw และทดสอบ provider/model |
+| IT instructors / trainers | ใช้เป็นคู่มือสอนหรือ workshop handout |
+| Developers | ใช้เป็น runbook สำหรับตั้งค่า gateway, model และ automation |
+| Knowledge workers | ใช้ AI Agent ช่วยสรุป ค้นหา จัดหมวด และสร้างรายงาน |
+| Operations / governance users | วางมาตรฐาน security, token hygiene และ cost control |
+
+---
+
+## Core Use Cases
+
+| Use Case | Description | Recommended Control |
 |---|---|---|
-| Daily Brief | สรุปข่าวหรือข้อมูลรายวัน | `nano` / lightweight model |
-| Document Summary | สรุปไฟล์หรือเอกสาร | `mini` / reasoning model |
-| Email Drafting | ร่างอีเมล ข้อความ และรายงาน | `mini` |
-| Classification | จัดหมวดข้อมูล ตรวจเงื่อนไขเบื้องต้น | `nano` |
-| Web Search Agent | ค้นข้อมูลล่าสุดจากเว็บพร้อมสรุป | `mini` |
-| Cron Automation | ตั้งงานอัตโนมัติรายวัน / รายสัปดาห์ | `nano` หรือ `mini` ตามความซับซ้อน |
-| Telegram Agent | ใช้งานผ่าน Telegram แบบสนทนา | `mini` เป็นค่าเริ่มต้น |
-
-> หมายเหตุ: ชื่อ model จริงขึ้นอยู่กับ provider, account, region, version และรายการ model ที่ OpenClaw ตรวจพบในขณะใช้งาน ควรตรวจสอบด้วยคำสั่ง `openclaw models list --provider openai` ก่อนตั้งค่าเสมอ
+| Daily Brief | สรุปข่าวหรือข้อมูลรายวัน | จำกัดจำนวนแหล่งข้อมูลและความยาวคำตอบ |
+| Document Summary | สรุปไฟล์หรือเอกสาร | แบ่งไฟล์เป็นส่วนย่อยก่อนประมวลผล |
+| Classification | จัดหมวดข้อมูลหรือเงื่อนไข | ใช้ prompt ที่มี output format ชัดเจน |
+| Web Search Agent | ค้นข้อมูลล่าสุดและสรุปพร้อมแหล่งอ้างอิง | เปิด web provider และตรวจ source ทุกครั้ง |
+| Cron Automation | ตั้งงานอัตโนมัติรายวัน/รายสัปดาห์ | ใช้ session แยกและจำกัด output |
+| Telegram Agent | สนทนากับ agent ผ่าน Telegram | ป้องกัน token และ reset session เมื่อ context ใหญ่เกินไป |
 
 ---
 
 ## Architecture
 
-```text
-User / Telegram / Dashboard
-        |
-        v
-OpenClaw Gateway
-        |
-        v
-AI Agent Runtime
-        |
-        v
-OpenAI / GPT Model Provider
-        |
-        v
-Tools / Files / Web Search / Cron / Logs
+```mermaid
+flowchart TD
+    U[User / Trainer / Operator] --> C[Channel: Dashboard / Telegram / CLI]
+    C --> G[OpenClaw Gateway]
+    G --> S[Agent Session]
+    S --> M[OpenAI GPT-5.x Provider]
+    S --> T[Tools: Web Search / Files / Cron / Logs]
+    M --> O[Output: Summary / Report / Action]
+    T --> O
 ```
 
-### Component Responsibilities
-
-| Component | Responsibility |
-|---|---|
-| User Interface | รับคำสั่งจากผู้ใช้ผ่าน Telegram, Dashboard หรือ CLI |
-| OpenClaw Gateway | จัดการ request, routing, session และ tool access |
-| AI Agent Runtime | ประมวลผล prompt, context, tools และ model response |
-| Model Provider | ให้บริการ model สำหรับ reasoning, generation และ classification |
-| Tools Layer | จัดการ web search, files, cron, logs และ integration อื่น ๆ |
-
----
-
-## Requirements
-
-ก่อนเริ่มต้น ควรเตรียมสิ่งต่อไปนี้:
-
-- macOS, Linux หรือ Windows ที่รองรับ shell / terminal
-- Node.js และ npm สำหรับการติดตั้งผ่าน npm
-- OpenAI API Key หรือบัญชี model provider ที่ต้องการใช้
-- Telegram Bot Token และ Chat ID หากต้องการใช้งานผ่าน Telegram
-- Internet connection สำหรับติดตั้ง package และเรียก API
-- ความเข้าใจพื้นฐานเกี่ยวกับ terminal, environment variables และ API key security
+อ่านรายละเอียดเพิ่มเติมได้ที่ [`docs/architecture.md`](docs/architecture.md)
 
 ---
 
 ## Quick Start
 
 ```bash
-# 1) ตรวจสอบ OpenClaw
+# ตรวจสอบว่า OpenClaw ถูกติดตั้งและเรียกใช้งานได้
 openclaw --version
 openclaw doctor
 
-# 2) ตรวจสอบ Gateway
+# ตรวจสอบสถานะ gateway ก่อนเริ่มใช้งานจริง
 openclaw gateway status
 
-# 3) Login OpenAI provider
+# เชื่อม OpenAI provider ผ่าน OpenClaw
 openclaw models auth login --provider openai
 
-# 4) ตรวจสอบ model
+# ตรวจรายการ model ที่บัญชีและ provider รองรับจริง
 openclaw models list --provider openai
-openclaw models status --probe
 
-# 5) เปิด Dashboard
-openclaw dashboard
-```
-
----
-
-## Installation
-
-### Option 1: Installer Script
-
-```bash
-curl -fsSL https://openclaw.ai/install.sh | bash
-```
-
-### Option 2: npm
-
-```bash
-npm install -g openclaw@latest
-openclaw onboard --install-daemon
-```
-
-### Verify Installation
-
-```bash
-openclaw --version
-openclaw doctor
-openclaw gateway status
-```
-
-หากคำสั่งใดไม่สำเร็จ ให้ตรวจสอบ path, permission, Node.js version และ network connection ก่อนดำเนินการต่อ
-
----
-
-## Dashboard and Gateway
-
-### Open Dashboard
-
-```bash
-openclaw dashboard
-```
-
-หรือเปิดผ่าน browser:
-
-```bash
-open http://127.0.0.1:18789
-```
-
-### Restart Gateway
-
-```bash
-openclaw gateway restart
-```
-
-> ไม่มีคำสั่ง `openclaw restart` ให้ใช้ `openclaw gateway restart` แทน
-
----
-
-## OpenAI Model Configuration
-
-### Login Provider
-
-```bash
-openclaw models auth login --provider openai
-```
-
-### Check Status
-
-```bash
+# ตรวจสถานะ model และทดสอบ probe
 openclaw models status
 openclaw models status --probe
+
+# เปิด Dashboard เพื่อดูสถานะระบบผ่าน UI
+openclaw dashboard
 ```
 
-### Set Default Model
-
-```bash
-openclaw models set openai/gpt-5.4-mini
-```
-
-### Set Fallback Model
-
-```bash
-openclaw models fallbacks clear
-openclaw models fallbacks add openai/gpt-5.4-nano
-```
-
-### Restart and Probe
-
-```bash
-openclaw gateway restart
-openclaw models status --probe
-```
-
-Expected result:
-
-```text
-Default   : openai/gpt-5.4-mini
-Fallbacks : openai/gpt-5.4-nano
-Probe     : ok
-```
-
-> ใช้ model ID ด้านบนเป็นตัวอย่างตามคู่มือนี้เท่านั้น หากบัญชีของคุณมีชื่อ model แตกต่างกัน ให้ใช้ชื่อที่แสดงจาก `openclaw models list --provider openai`
+> อย่า hardcode model ID จากเอกสารนี้โดยไม่ตรวจ catalog ปัจจุบันก่อน ให้ใช้ผลจาก `openclaw models list --provider openai` เป็นแหล่งอ้างอิงก่อนตั้งค่า model ทุกครั้ง
 
 ---
 
-## Model Strategy
+## Documentation Map
 
-```text
-Primary   = openai/gpt-5.4-mini
-Fallback  = openai/gpt-5.4-nano
-```
-
-| Workload | Strategy |
+| Document | Description |
 |---|---|
-| งานทั่วไป | ใช้ primary model |
-| งานเบา / classification | ใช้ fallback หรือ nano model |
-| Cron รายวัน | ใช้ model ขนาดเล็กเพื่อลด cost |
-| รายงานละเอียด | ใช้ model ที่ reasoning ดีกว่า |
-| งานค้นเว็บ | ใช้ model ที่สรุปและอ้างอิงได้ดี |
-| งานไฟล์ยาว | แบ่งไฟล์เป็นส่วน ๆ ก่อนประมวลผล |
-
-### Alias Setup
-
-```bash
-openclaw models aliases add gpt-mini openai/gpt-5.4-mini
-openclaw models aliases add gpt-nano openai/gpt-5.4-nano
-openclaw models aliases add GPT openai/gpt-5.4-mini
-```
-
-ตรวจสอบ:
-
-```bash
-openclaw models aliases list
-```
+| [`docs/architecture.md`](docs/architecture.md) | อธิบายภาพรวม gateway, provider, session, tools และ output flow |
+| [`docs/installation.md`](docs/installation.md) | ขั้นตอนติดตั้ง ตรวจสอบ และเปิด Dashboard |
+| [`docs/model-configuration.md`](docs/model-configuration.md) | แนวทางตั้งค่า OpenAI provider, model, fallback และ alias |
+| [`docs/security.md`](docs/security.md) | API key, token hygiene, secret handling และ log sanitization |
+| [`docs/troubleshooting.md`](docs/troubleshooting.md) | อาการผิดพลาดที่พบบ่อยและวิธีตรวจทีละขั้น |
+| [`docs/cron-automation.md`](docs/cron-automation.md) | แนวทางออกแบบ scheduled job แบบ cost-safe |
+| [`examples/prompts/daily-brief.md`](examples/prompts/daily-brief.md) | prompt ตัวอย่างสำหรับ daily brief |
+| [`examples/config/.env.example`](examples/config/.env.example) | environment variable template แบบไม่มีข้อมูลลับ |
 
 ---
 
-## Web Search
+## Operating Standards
 
-ใช้เมื่อ Agent ต้องค้นข้อมูลล่าสุดจากเว็บ เช่น ข่าว กฎหมาย ราคา version หรือข้อมูลที่อาจเปลี่ยนแปลงได้
+### Code Fence Standard
 
-```bash
-openclaw configure --section web
-openclaw gateway restart
-```
-
-| Provider | Suitable For |
-|---|---|
-| DuckDuckGo | ทดสอบเร็ว ไม่ต้องใช้ API key |
-| Brave | ใช้งานจริง เสถียรกว่า |
-| Gemini Search | งานที่ต้องการ grounding / citation |
-
-Best practice:
-
-- ระบุช่วงเวลาให้ชัดเจน เช่น วันนี้, 24 ชั่วโมงล่าสุด, ปี 2026
-- จำกัดจำนวนผลลัพธ์เพื่อควบคุม token
-- ให้ Agent แยกข้อเท็จจริงจากการวิเคราะห์
-- ขอ citation เมื่อใช้ข้อมูลจากเว็บ
-
----
-
-## Cron Automation
-
-### List Jobs
-
-```bash
-openclaw cron list
-```
-
-### Run Job
-
-```bash
-openclaw cron run "<job-id>"
-```
-
-### View Runs
-
-```bash
-openclaw cron runs --id "<job-id>"
-```
-
-### Enable / Disable Job
-
-```bash
-openclaw cron disable "<job-id>"
-openclaw cron enable "<job-id>"
-```
-
-### Edit Job Model
-
-```bash
-openclaw cron edit "<job-id>" --model openai/gpt-5.4-nano
-```
-
-### Example: Daily News Brief
-
-```bash
-MSG=$(cat <<'EOF2'
-ทำ Daily News Brief แบบสั้น
-
-ค้นข่าวทั่วไปที่สำคัญใน 24 ชั่วโมงล่าสุด
-จำกัดไม่เกิน 3 ข่าว
-สรุปเป็นภาษาไทย
-ข่าวละไม่เกิน 4 บรรทัด
-ท้ายข้อความให้ถามว่า “ต้องการรายละเอียดข่าวใดเพิ่มเติมหรือไม่”
-EOF2
-)
-
-openclaw cron add \
-  --name "daily-general-news-brief" \
-  --cron "0 8 * * *" \
-  --tz "Asia/Bangkok" \
-  --session isolated \
-  --announce \
-  --channel telegram \
-  --to "<telegram-chat-id>" \
-  --model openai/gpt-5.4-nano \
-  --message "$MSG"
-```
-
----
-
-## File Workflow
-
-### Create Working Directories
-
-```bash
-mkdir -p "$HOME/AI-Agent-Lab/input"
-mkdir -p "$HOME/AI-Agent-Lab/output"
-```
-
-### Read Input File
-
-```bash
-cat "$HOME/AI-Agent-Lab/input/sample.txt"
-head -80 "$HOME/AI-Agent-Lab/input/sample.txt"
-```
-
-### Write Markdown Output
-
-```bash
-cat <<'EOF2' > "$HOME/AI-Agent-Lab/output/summary.md"
-# Summary
-
-This is a sample summary.
-EOF2
-```
-
-### Backup Before Editing
-
-```bash
-cp "$HOME/AI-Agent-Lab/output/summary.md" \
-   "$HOME/AI-Agent-Lab/output/summary.backup.$(date +%Y%m%d-%H%M%S).md"
-```
-
----
-
-## Prompt Pattern
-
-ใช้โครงสร้าง prompt ต่อไปนี้เพื่อให้ Agent ทำงานชัดเจนและตรวจสอบได้:
-
-```text
-บทบาท:
-คุณคือ...
-
-งาน:
-ทำอะไร
-
-ข้อมูล:
-ข้อมูลที่ต้องใช้
-
-ข้อจำกัด:
-ความยาว / ห้ามทำอะไร / ใช้แหล่งใด
-
-รูปแบบผลลัพธ์:
-หัวข้อ / ตาราง / JSON / bullet
-```
-
-Example:
-
-```text
-สรุปรายงานการประชุมต่อไปนี้
-- ตอบภาษาไทย
-- ไม่เกิน 500 คำ
-- แยก Action Items
-- ถ้าข้อมูลไม่พอ ให้ระบุว่า “ข้อมูลไม่เพียงพอ”
-```
-
----
-
-## Cost and Rate-Limit Control
-
-### Cost Control
-
-```text
-[ ] ใช้ nano model กับงานเบา
-[ ] ใช้ mini model กับงานซับซ้อน
-[ ] จำกัด output length
-[ ] จำกัดจำนวนผลลัพธ์จาก web search
-[ ] ไม่อ่านไฟล์ยาวทั้งฉบับถ้าไม่จำเป็น
-[ ] ไม่รัน Cron ซ้ำถี่เกินความจำเป็น
-[ ] แยกงานใหญ่เป็นหลายขั้นตอน
-```
-
-### Rate Limit Recovery
-
-ถ้าเจอข้อความลักษณะนี้:
-
-```text
-Rate limit reached
-```
-
-ให้ดำเนินการ:
-
-```bash
-sleep 90
-openclaw cron list
-openclaw cron runs --id "<job-id>"
-```
-
-แนวทางลดปัญหา:
-
-- ลด prompt และ output
-- ลดจำนวน tool call
-- แยก Cron ไม่ให้รันติดกัน
-- หลีกเลี่ยงการกด run ซ้ำหลายครั้ง
-
----
-
-## Context Overflow
-
-เกิดเมื่อขนาดข้อมูลรวมเกิน context limit ของ model:
-
-```text
-prompt + chat history + tool input + output budget > context limit
-```
-
-วิธีแก้:
-
-```text
-ใช้ /new ใน Telegram
-ลด prompt
-จำกัด output
-ไม่อ่าน PDF เต็มฉบับในครั้งเดียว
-ไม่ค้นหลายเว็บพร้อมกันโดยไม่จำเป็น
-แยกงานเป็น Discovery → Analysis → Record
-```
-
----
-
-## Telegram Recovery
-
-หาก Agent ค้าง หรือแสดงข้อความ `Something went wrong` ให้ส่งคำสั่งใน Telegram:
-
-```text
-/new
-```
-
-จากนั้นทดสอบด้วยข้อความสั้น:
-
-```text
-ตรวจสถานะสั้น ๆ
-```
-
----
-
-## Security Checklist
-
-```text
-[ ] ไม่เปิดเผย OpenAI API Key
-[ ] ไม่เปิดเผย Telegram Bot Token
-[ ] ไม่เปิดเผย Gateway Token
-[ ] ไม่แนบ secret ใน GitHub, README, issue หรือ screenshot
-[ ] Backup config ก่อนแก้ไข
-[ ] ตรวจ logs ก่อนส่งต่อให้บุคคลอื่น
-[ ] ใช้คำสั่ง rm / sudo / chmod อย่างระมัดระวัง
-[ ] แยก environment ระหว่าง test และ production
-[ ] จำกัดสิทธิ์ของ token เท่าที่จำเป็น
-```
-
-### Backup Config
-
-```bash
-cp "$HOME/.openclaw/openclaw.json" \
-   "$HOME/.openclaw/openclaw.backup.$(date +%Y%m%d-%H%M%S).json"
-```
-
----
-
-## Troubleshooting
-
-| Error / Symptom | Possible Cause | Recommended Action |
+| Block Type | Fence | Use For |
 |---|---|---|
-| `401` | API key ผิดหรือหมดอายุ | Login provider ใหม่ |
-| `402` | Credit ไม่พอ | เติม credit หรือลด token/output |
-| `rate limit` | ใช้ token ต่อนาทีเกิน | รอ / ลด prompt / ลด tool call |
-| `context overflow` | prompt หรือไฟล์ใหญ่เกิน | ลด context / ใช้ `/new` / แยกงาน |
-| `web_search disabled` | ยังไม่ได้ตั้งค่า web search | `openclaw configure --section web` |
-| `unknown command restart` | ใช้คำสั่งผิด | ใช้ `openclaw gateway restart` |
-| Dashboard เปิดไม่ได้ | Gateway ไม่ทำงานหรือ port ไม่พร้อม | `openclaw gateway status` แล้ว restart |
-| Telegram ไม่ตอบ | session ค้างหรือ bot/channel ผิด | ใช้ `/new` และตรวจ token/chat ID |
+| Shell command | `bash` | คำสั่ง terminal ที่ผู้ใช้สามารถ copy ไป run ได้ |
+| Terminal output | `console` | ตัวอย่างผลลัพธ์จาก terminal |
+| Prompt/template | `markdown` or `text` | prompt, checklist, template, policy text |
+| Diagram | `mermaid` | architecture, workflow, sequence, decision flow |
+
+### Shell Comment Standard
+
+```bash
+# ใช้ comment ภาษาไทยแบบปกติเพื่ออธิบายเหตุผลของคำสั่ง
+openclaw models status --probe
+```
+
+ไม่ใช้ marker ลักษณะ debug เช่น `XXX`, `TODO` หรือคำที่ทำให้เอกสารดูไม่เป็นทางการ เว้นแต่เป็นงาน backlog จริง
 
 ---
 
-## Command Cheat Sheet
+## Security Baseline
+
+ห้าม commit หรือแสดงข้อมูลต่อไปนี้ใน repository, screenshot, slide, chat หรือ shared terminal:
+
+```text
+API keys
+Gateway tokens
+Telegram bot tokens
+Passwords
+Session tokens
+.env files with real values
+Auth profiles
+Logs containing secrets
+```
+
+ใช้ [`examples/config/.env.example`](examples/config/.env.example) เพื่อสอนรูปแบบตัวแปรเท่านั้น และใช้ [`docs/security.md`](docs/security.md) เป็น checklist ก่อนเผยแพร่เอกสารหรือ log
+
+---
+
+## Troubleshooting First Steps
 
 ```bash
-# System
-openclaw --version
+# ตรวจสุขภาพ OpenClaw เบื้องต้น
 openclaw doctor
+
+# ตรวจสถานะ gateway
 openclaw gateway status
-openclaw gateway restart
-openclaw dashboard
 
-# Models
-openclaw models list --provider openai
-openclaw models status
+# ตรวจ provider และ model
+openclaw models auth list
 openclaw models status --probe
-openclaw models set openai/gpt-5.4-mini
-openclaw models fallbacks clear
-openclaw models fallbacks add openai/gpt-5.4-nano
-openclaw models aliases list
 
-# Auth
-openclaw models auth login --provider openai
-
-# Cron
-openclaw cron list
-openclaw cron run "<job-id>"
-openclaw cron runs --id "<job-id>"
-openclaw cron disable "<job-id>"
-openclaw cron enable "<job-id>"
-openclaw cron edit "<job-id>" --model openai/gpt-5.4-nano
-
-# Web Search
-openclaw configure --section web
-openclaw gateway restart
-
-# Logs
-openclaw logs --help
+# ตรวจ logs เมื่อยังไม่พบสาเหตุ
 openclaw logs --follow
 ```
 
----
-
-## Recommended Repository Structure
-
-```text
-.
-├── README.md                 # Main operating guide
-├── docs/
-│   ├── installation.md       # Detailed installation notes
-│   ├── model-strategy.md     # Model selection and fallback strategy
-│   ├── cron-recipes.md       # Cron automation examples
-│   ├── telegram.md           # Telegram setup and recovery
-│   ├── troubleshooting.md    # Error handling and diagnostics
-│   └── security.md           # Secret handling and operational security
-├── examples/
-│   ├── prompts/
-│   ├── cron/
-│   └── scripts/
-├── assets/
-│   └── images/
-├── CHANGELOG.md
-├── CONTRIBUTING.md
-└── LICENSE
-```
-
-> Repository นี้ยังสามารถขยายเป็น knowledge base เต็มรูปแบบได้ โดยแยกคู่มือย่อยออกจาก README เพื่อให้ดูแลง่ายขึ้น
+ดูรายละเอียดเพิ่มเติมใน [`docs/troubleshooting.md`](docs/troubleshooting.md)
 
 ---
 
 ## Roadmap
 
-- [ ] เพิ่ม `docs/installation.md`
-- [ ] เพิ่ม `docs/security.md`
-- [ ] เพิ่ม `docs/cron-recipes.md`
-- [ ] เพิ่มตัวอย่าง prompt สำหรับงานประจำ
-- [ ] เพิ่มตัวอย่าง Telegram recovery workflow
-- [ ] เพิ่ม CHANGELOG
-- [ ] เพิ่ม CONTRIBUTING guideline
-- [ ] เพิ่ม LICENSE file ตามนโยบายของ repository
+- [ ] Add a brand/title banner for README
+- [ ] Add workshop slide outline
+- [ ] Add hands-on lab worksheet
+- [ ] Add model-selection checklist
+- [ ] Add Thai/English glossary for AI-agent operations
+- [ ] Add example workflows for Telegram, Web Search, File Summary, and Cron
 
 ---
 
 ## Contributing
 
-แนวทางการปรับปรุง repository:
+อ่านแนวทางใน [`CONTRIBUTING.md`](CONTRIBUTING.md) ก่อนเปิด PR
 
-1. สร้าง branch ใหม่ก่อนแก้ไขเสมอ
-2. ใช้ชื่อ branch ที่สื่อความหมาย เช่น `docs/update-readme`, `version/1.1-readme-standard`
-3. แก้ไขเฉพาะไฟล์ที่เกี่ยวข้องกับงานนั้น
-4. ใช้ commit message แบบชัดเจน เช่น `docs: update model configuration guide`
-5. ตรวจสอบว่าไม่มี API key, token, password หรือ secret หลุดอยู่ในไฟล์
-6. เปิด pull request เพื่อ review ก่อน merge เข้า `main`
+มาตรฐานสำคัญ:
+
+- ใช้ branch แยกจาก `main`
+- ไม่ commit secrets หรือไฟล์ `.env` จริง
+- ใช้ code fence language tag ให้ถูกต้อง
+- ใส่ comment ภาษาไทยใน code block เมื่อเป็นสื่อสอน
+- เปิด PR แบบ draft เพื่อ review ก่อน merge
 
 ---
 
 ## License
 
-ยังไม่พบข้อมูล license ใน README เดิมโดยตรง ควรเพิ่มไฟล์ `LICENSE` เพื่อกำหนดเงื่อนไขการใช้งาน repository ให้ชัดเจนก่อนเผยแพร่หรือ reuse ในวงกว้าง
-
-หากต้องการเปิดให้ใช้เพื่อการเรียนรู้และต่อยอดทั่วไป สามารถพิจารณาใช้ **MIT License** หรือ license อื่นตามวัตถุประสงค์ของเจ้าของ repository
-
----
-
-## Summary
-
-OpenClaw + OpenAI / GPT 5.x เหมาะสำหรับสร้าง AI Agent ใช้งานทั่วไป เช่น สรุปข่าว สรุปไฟล์ เขียนอีเมล จัดหมวดข้อมูล ทำรายงาน ค้นเว็บ และตั้ง Automation
-
-ค่าที่แนะนำตามคู่มือนี้:
-
-```text
-Primary   = openai/gpt-5.4-mini
-Fallback  = openai/gpt-5.4-nano
-Cron เบา  = openai/gpt-5.4-nano
-งานละเอียด = openai/gpt-5.4-mini
-```
-
-หลักปฏิบัติที่ควรยึดไว้:
-
-```text
-ตรวจสถานะก่อนแก้
-backup ก่อนเปลี่ยน config
-ไม่เปิดเผย secret
-ใช้ model ให้เหมาะกับงาน
-จำกัด prompt และ output
-ไม่รัน Cron ซ้ำถี่
-ใช้ /new เมื่อ session ค้าง
-```
-
----
-
-**Maintainer:** `PhuminDecOKnoi`  
-**Repository:** `How-to-use-OpenClaw-OpenAI-GPT-5.x`  
-**Document Version:** `v1.1`  
-**Last Updated:** `2026-08-01`
+This repository is released under the MIT License. See [`LICENSE`](LICENSE) for details.
