@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
+  <title id="title">OpenClaw and OpenAI GPT-5.x dark workflow</title>
+  <desc id="desc">Dark themed workflow showing user channels, OpenClaw Gateway, Agent Session, OpenAI GPT-5.x Provider, tools layer, and output.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#05070d"/>
+      <stop offset="55%" stop-color="#0d1117"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#000000" flood-opacity="0.45"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#8b949e"/>
+    </marker>
+    <style>
+      .title { font: 700 34px Inter, Arial, sans-serif; fill: #f0f6fc; }
+      .subtitle { font: 500 17px Inter, Arial, sans-serif; fill: #8b949e; }
+      .label { font: 700 20px Inter, Arial, sans-serif; fill: #f8fafc; }
+      .small { font: 500 14px Inter, Arial, sans-serif; fill: #c9d1d9; }
+      .tiny { font: 500 12px Inter, Arial, sans-serif; fill: #8b949e; }
+      .box { rx: 20; filter: url(#shadow); }
+      .line { stroke: #8b949e; stroke-width: 3; fill: none; marker-end: url(#arrow); }
+      .soft-line { stroke: #30363d; stroke-width: 2; fill: none; }
+    </style>
+  </defs>
+
+  <rect width="1280" height="720" fill="url(#bg)"/>
+  <rect x="36" y="36" width="1208" height="648" rx="30" fill="#0d1117" stroke="#30363d" stroke-width="2"/>
+
+  <text x="72" y="92" class="title">OpenClaw + OpenAI GPT-5.x Workflow</text>
+  <text x="72" y="123" class="subtitle">Dark operating flow for Dashboard, Telegram, CLI, tools, automation, and AI outputs</text>
+
+  <rect x="72" y="174" width="238" height="92" class="box" fill="#161b22" stroke="#58a6ff" stroke-width="3"/>
+  <text x="96" y="212" class="label">User / Trainer</text>
+  <text x="96" y="239" class="small">Operator request</text>
+
+  <rect x="380" y="174" width="238" height="92" class="box" fill="#161b22" stroke="#58a6ff" stroke-width="3"/>
+  <text x="404" y="212" class="label">Channel Layer</text>
+  <text x="404" y="239" class="small">Dashboard / Telegram / CLI</text>
+
+  <rect x="690" y="174" width="238" height="92" class="box" fill="#1f2937" stroke="#7c3aed" stroke-width="3"/>
+  <text x="714" y="212" class="label">OpenClaw Gateway</text>
+  <text x="714" y="239" class="small">Routing / permissions</text>
+
+  <rect x="970" y="174" width="238" height="92" class="box" fill="#1f2937" stroke="#7c3aed" stroke-width="3"/>
+  <text x="994" y="212" class="label">Agent Session</text>
+  <text x="994" y="239" class="small">Context / workflow</text>
+
+  <rect x="206" y="386" width="300" height="104" class="box" fill="#172554" stroke="#38bdf8" stroke-width="3"/>
+  <text x="232" y="427" class="label">OpenAI GPT-5.x</text>
+  <text x="232" y="455" class="small">Reasoning / generation</text>
+  <text x="232" y="477" class="tiny">Provider model layer</text>
+
+  <rect x="598" y="370" width="320" height="138" class="box" fill="#14532d" stroke="#34d399" stroke-width="3"/>
+  <text x="624" y="412" class="label">Tools Layer</text>
+  <text x="624" y="441" class="small">Web Search · Files · Cron · Logs</text>
+  <text x="624" y="466" class="tiny">Controlled access, cost limits, security checks</text>
+
+  <rect x="1010" y="386" width="198" height="104" class="box" fill="#3b0764" stroke="#c084fc" stroke-width="3"/>
+  <text x="1034" y="427" class="label">Output</text>
+  <text x="1034" y="455" class="small">Summary / Report</text>
+  <text x="1034" y="477" class="tiny">Action-ready response</text>
+
+  <path class="line" d="M 310 220 L 372 220"/>
+  <path class="line" d="M 618 220 L 682 220"/>
+  <path class="line" d="M 928 220 L 962 220"/>
+  <path class="line" d="M 1089 266 C 1089 325 758 315 758 362"/>
+  <path class="line" d="M 1089 266 C 1089 329 356 330 356 378"/>
+  <path class="line" d="M 506 438 L 590 438"/>
+  <path class="line" d="M 918 438 L 1002 438"/>
+
+  <path class="soft-line" d="M 72 552 L 1208 552"/>
+  <text x="72" y="590" class="subtitle">Operational control points: model verification · token hygiene · tool permissions · rate limits · context management</text>
+  <text x="72" y="625" class="tiny">Repository: How-to-use-OpenClaw-OpenAI-GPT-5.x · Theme: Dark · Format: SVG for reliable GitHub rendering</text>
+</svg>

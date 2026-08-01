@@ -51,6 +51,8 @@
 ├── LICENSE
 ├── CHANGELOG.md
 ├── CONTRIBUTING.md
+├── assets/
+│   └── openclaw-openai-gpt5x-workflow-dark.svg
 ├── docs/
 │   ├── architecture.md
 │   ├── installation.md
@@ -70,6 +72,7 @@
 | Path | Purpose |
 |---|---|
 | `README.md` | หน้าแรกของ repository และแผนที่การใช้งานทั้งหมด |
+| `assets/` | ภาพประกอบและ workflow diagram ที่ต้องการ render คงที่บน GitHub |
 | `docs/` | เอกสารปฏิบัติการแยกตามหัวข้อ เพื่อให้อ่านง่ายและ maintain ได้ |
 | `examples/config/.env.example` | ตัวอย่าง environment variables แบบไม่มี secret จริง |
 | `examples/prompts/` | ตัวอย่าง prompt สำหรับงานสอน งานทดลอง และ automation |
@@ -106,16 +109,11 @@
 
 ## Architecture
 
-```mermaid
-flowchart TD
-    U[User / Trainer / Operator] --> C[Channel: Dashboard / Telegram / CLI]
-    C --> G[OpenClaw Gateway]
-    G --> S[Agent Session]
-    S --> M[OpenAI GPT-5.x Provider]
-    S --> T[Tools: Web Search / Files / Cron / Logs]
-    M --> O[Output: Summary / Report / Action]
-    T --> O
-```
+<p align="center">
+  <img src="assets/openclaw-openai-gpt5x-workflow-dark.svg" alt="OpenClaw and OpenAI GPT-5.x dark workflow showing channels, gateway, agent session, model provider, tools, and output" width="100%">
+</p>
+
+> The README uses an SVG workflow instead of an inline Mermaid block so the **dark background renders consistently on GitHub main**.
 
 อ่านรายละเอียดเพิ่มเติมได้ที่ [`docs/architecture.md`](docs/architecture.md)
 
@@ -174,6 +172,7 @@ openclaw dashboard
 | Terminal output | `console` | ตัวอย่างผลลัพธ์จาก terminal |
 | Prompt/template | `markdown` or `text` | prompt, checklist, template, policy text |
 | Diagram | `mermaid` | architecture, workflow, sequence, decision flow |
+| Fixed visual | `svg` | workflow ที่ต้องการควบคุมพื้นหลัง/สีให้ render เหมือนกันบน GitHub |
 
 ### Shell Comment Standard
 
