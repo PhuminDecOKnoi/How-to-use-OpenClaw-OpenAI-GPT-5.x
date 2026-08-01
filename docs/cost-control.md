@@ -4,34 +4,42 @@
 
 ---
 
+## Source Basis
+
+- GPT-5.6 Sol/Terra/Luna เป็น tier strategy ที่อ้างอิงจาก OpenAI official GPT-5.6 materials. [OA-GPT56] [OA-GPT56-HELP]
+- ข่าวราคา July 30, 2026 จาก Reuters/Axios/Business Insider ใช้เป็นสัญญาณว่า pricing เปลี่ยนได้ จึงต้องตรวจราคาปัจจุบันก่อน production. [NEWS-REUTERS] [NEWS-AXIOS] [NEWS-BI]
+- Tool-augmented agents มีความเสี่ยงด้าน tool use, credential leakage, prompt injection และ auditability จึงต้องคุม tool-call budget ควบคู่กับ cost. [SEC-PRISM]
+
+---
+
 ## Cost-Control Principle
 
 ```text
 Pick the lowest-cost verified model tier that can still complete the task safely and accurately.
 ```
 
-Do not choose the largest reasoning model for every job. Match the model to workload risk, depth, and volume.
+Do not choose the largest reasoning model for every job. Match the model to workload risk, depth, and volume. Pricing and model availability can change, so verify current provider pricing before production use. [NEWS-REUTERS]
 
 ---
 
 ## Model Tier Policy
 
-| Workload | Preferred tier | Reason |
-|---|---|---|
-| One-off complex reasoning | Sol or Terra | Accuracy and reasoning quality matter more than cost |
-| Routine professional writing | Terra | Balanced quality and cost |
-| Daily brief / cron summary | Luna or Terra | Recurring jobs can accumulate cost quickly |
-| Bulk classification | Luna | Short output and high volume |
-| Code repair / architecture review | Sol or Terra | More reasoning and verification needed |
-| Legal/audit-style analysis | Sol or Terra | Source fidelity and reasoning quality are important |
+| Workload | Preferred tier | Reason | Source |
+|---|---|---|---|
+| One-off complex reasoning | Sol or Terra | Accuracy and reasoning quality matter more than cost | [OA-GPT56] |
+| Routine professional writing | Terra | Balanced quality and cost | [OA-GPT56] |
+| Daily brief / cron summary | Luna or Terra | Recurring jobs can accumulate cost quickly | [NEWS-REUTERS] |
+| Bulk classification | Luna | Short output and high volume | [OA-GPT56] |
+| Code repair / architecture review | Sol or Terra | More reasoning and verification needed | [OA-GPT56] |
+| Legal/audit-style analysis | Sol or Terra | Source fidelity and reasoning quality are important | [OA-GPT56] |
 
-> Always verify the actual route and pricing before production use. Public prices and tier availability can change after publication.
+> Always verify the actual route and pricing before production use. Public prices and tier availability can change after publication. [NEWS-REUTERS] [NEWS-AXIOS]
 
 ---
 
 ## Output Budget Standard
 
-Every prompt used in production or cron should include an output budget.
+Every prompt used in production or cron should include an output budget. Output limits reduce token cost and reduce uncontrolled agent expansion risk. [NEWS-REUTERS] [SEC-PRISM]
 
 Example:
 
@@ -47,7 +55,7 @@ Constraints:
 
 ## Tool-Call Budget Standard
 
-For agent workflows, uncontrolled tool use can create cost and safety risk.
+For agent workflows, uncontrolled tool use can create cost and safety risk. Tool-augmented LLM agents need limits over tools, paths, outbound data, and audit trail. [SEC-PRISM]
 
 | Tool/workflow | Control |
 |---|---|
@@ -71,6 +79,8 @@ Before enabling a scheduled job, document:
 - Fallback behavior
 - Owner responsible for review
 
+Recurring jobs can multiply cost quickly, especially when combined with web search, file reads, and retries. [NEWS-REUTERS] [SEC-PRISM]
+
 Example command pattern:
 
 ```bash
@@ -88,7 +98,7 @@ openclaw cron add \
 
 ## Prompt Caching Note
 
-GPT-5.6 public materials describe more predictable prompt-caching behavior. In OpenClaw workflows, this matters when repeated jobs reuse stable instruction blocks, templates, or system context.
+GPT-5.6 public materials describe platform-level improvements and model behavior that can affect cost/performance planning. Treat caching and billing assumptions as provider-side behavior that must be verified in the current account before relying on savings. [OA-GPT56] [NEWS-REUTERS]
 
 Recommended practice:
 
@@ -101,14 +111,14 @@ Recommended practice:
 
 ## Production Review Checklist
 
-- [ ] Model route verified with `openclaw models list --provider openai`
-- [ ] Pricing checked on current OpenAI/provider billing page
-- [ ] Prompt has output limit
-- [ ] Tool call count is limited
-- [ ] File scope is limited
-- [ ] Cron frequency is justified
-- [ ] Fallback does not silently downgrade high-risk tasks
-- [ ] Logs are reviewed after first production run
+- [ ] Model route verified with `openclaw models list --provider openai` [OC-MODELS]
+- [ ] Pricing checked on current OpenAI/provider billing page [NEWS-REUTERS]
+- [ ] Prompt has output limit [NEWS-REUTERS]
+- [ ] Tool call count is limited [SEC-PRISM]
+- [ ] File scope is limited [SEC-PRISM]
+- [ ] Cron frequency is justified [NEWS-REUTERS]
+- [ ] Fallback does not silently downgrade high-risk tasks [OC-MODELS]
+- [ ] Logs are reviewed after first production run [SEC-PRISM]
 - [ ] Budget owner is defined
 
 ---
@@ -124,3 +134,15 @@ Stop or pause the workflow if any of these occur:
 - Cron job runs longer than expected
 - Agent starts reading broader file scope than intended
 - Logs contain secrets or personal data
+
+---
+
+## Reference Links
+
+[OC-MODELS]: https://docs.openclaw.ai/cli/models
+[OA-GPT56]: https://openai.com/index/gpt-5-6/
+[OA-GPT56-HELP]: https://help.openai.com/en/articles/20001325-a-preview-of-gpt-56-sol-terra-and-luna
+[NEWS-REUTERS]: https://www.reuters.com/business/retail-consumer/openai-cuts-prices-smaller-models-businesses-scrutinize-ai-spend-2026-07-30/
+[NEWS-AXIOS]: https://www.axios.com/2026/07/30/openai-cuts-prices-gpt-terra-luna5
+[NEWS-BI]: https://www.businessinsider.com/openai-price-cuts-gpt-terra-luna-2026-7
+[SEC-PRISM]: https://arxiv.org/abs/2603.11853
