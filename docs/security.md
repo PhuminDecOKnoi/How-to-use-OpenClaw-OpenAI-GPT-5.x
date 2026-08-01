@@ -4,6 +4,14 @@
 
 ---
 
+## Source Basis
+
+- OpenClaw OpenAI provider documentation supports OpenAI auth/profile/provider context. [OC-OPENAI]
+- OpenClaw-style tool-augmented agents have documented risks around prompt injection, unsafe tool execution, credential leakage, path/tool controls, and audit controls. [SEC-PRISM]
+- Practitioner security reporting also emphasizes config/credential exposure and spending limits for OpenClaw-style setups. [NEWS-SECURITY]
+
+---
+
 ## Never Commit These Values
 
 ```text
@@ -21,6 +29,8 @@ Private file paths
 Unredacted prompt/output logs
 ```
 
+API keys, auth profiles, and provider credentials must not be stored in public repository files or screenshots. [OC-OPENAI] [NEWS-SECURITY]
+
 ---
 
 ## Use Environment Variables Safely
@@ -30,7 +40,7 @@ Unredacted prompt/output logs
 export OPENAI_API_KEY="<replace-with-real-key-only-on-your-machine>"
 ```
 
-> อย่าใส่ key จริงใน README, issue, PR, screenshot, slide หรือ chat สาธารณะ
+> อย่าใส่ key จริงใน README, issue, PR, screenshot, slide หรือ chat สาธารณะ. [OC-OPENAI]
 
 ---
 
@@ -48,30 +58,30 @@ OPENCLAW_ENV="development"
 
 ## Agent Threat Model
 
-OpenClaw-style AI agents can connect models, tools, files, web search, logs, external apps, and automation. This creates a broader attack surface than a simple chatbot.
+OpenClaw-style AI agents can connect models, tools, files, web search, logs, external apps, and automation. This creates a broader attack surface than a simple chatbot. [SEC-PRISM]
 
-| Threat | Risk | Mitigation |
-|---|---|---|
-| Prompt injection | External content may instruct the agent to ignore rules or reveal data | Treat external text as untrusted; require source review and tool limits |
-| Credential leakage | Keys/tokens may appear in prompts, logs, files, screenshots, or examples | Mask secrets and rotate exposed credentials immediately |
-| Unsafe tool execution | Agent may call tools beyond the intended task scope | Limit tools per workflow and require explicit operator approval for risky actions |
-| Skill/plugin poisoning | A workflow or prompt template may include hidden malicious instructions | Review templates before reuse and store trusted templates in version control |
-| Over-broad file access | Agent may read files/folders unrelated to the task | Use explicit file paths and chunking; avoid whole-folder reads by default |
-| Cron amplification | A recurring job can multiply cost or repeated mistakes | Use isolated sessions, low-risk model tier, and strict output/tool budgets |
-| Log exposure | Logs may contain prompts, user data, or provider responses | Sanitize before sharing and avoid uploading raw logs publicly |
+| Threat | Risk | Mitigation | Source |
+|---|---|---|---|
+| Prompt injection | External content may instruct the agent to ignore rules or reveal data | Treat external text as untrusted; require source review and tool limits | [SEC-PRISM] |
+| Credential leakage | Keys/tokens may appear in prompts, logs, files, screenshots, or examples | Mask secrets and rotate exposed credentials immediately | [SEC-PRISM] [NEWS-SECURITY] |
+| Unsafe tool execution | Agent may call tools beyond the intended task scope | Limit tools per workflow and require explicit operator approval for risky actions | [SEC-PRISM] |
+| Skill/plugin poisoning | A workflow or prompt template may include hidden malicious instructions | Review templates before reuse and store trusted templates in version control | [SEC-PRISM] |
+| Over-broad file access | Agent may read files/folders unrelated to the task | Use explicit file paths and chunking; avoid whole-folder reads by default | [SEC-PRISM] |
+| Cron amplification | A recurring job can multiply cost or repeated mistakes | Use isolated sessions, low-risk model tier, and strict output/tool budgets | [SEC-PRISM] |
+| Log exposure | Logs may contain prompts, user data, or provider responses | Sanitize before sharing and avoid uploading raw logs publicly | [SEC-PRISM] |
 
 ---
 
 ## Tool Permission Standard
 
-| Workflow | Default permission |
-|---|---|
-| Web search | Allowed only when current/external information is needed |
-| File reading | Limit to named files or clearly scoped folders |
-| File writing | Use branch/PR workflow for repository changes |
-| Cron automation | Require output limit, model route, and owner |
-| External integrations | Use least privilege and avoid broad account scopes |
-| Logs | Read targeted ranges and redact before sharing |
+| Workflow | Default permission | Source |
+|---|---|---|
+| Web search | Allowed only when current/external information is needed | [SEC-PRISM] |
+| File reading | Limit to named files or clearly scoped folders | [SEC-PRISM] |
+| File writing | Use branch/PR workflow for repository changes | [SEC-PRISM] |
+| Cron automation | Require output limit, model route, and owner | [SEC-PRISM] |
+| External integrations | Use least privilege and avoid broad account scopes | [SEC-PRISM] |
+| Logs | Read targeted ranges and redact before sharing | [SEC-PRISM] |
 
 ---
 
@@ -89,19 +99,21 @@ OpenClaw-style AI agents can connect models, tools, files, web search, logs, ext
 - Provider request IDs if they can reveal account context
 - Full raw payloads unless the reviewer really needs them
 
+Log sanitization and outbound secret-pattern controls are part of the security-control approach for tool-augmented agents. [SEC-PRISM]
+
 ---
 
 ## Production Security Checklist
 
-- [ ] No real `.env` files committed
-- [ ] No API keys/tokens in README/docs/examples
-- [ ] Auth profiles are not exported into the repository
-- [ ] Logs are sanitized before sharing
-- [ ] Tool access is limited per workflow
-- [ ] Cron jobs use isolated sessions
-- [ ] External sources are treated as untrusted input
-- [ ] Fallback model is deliberately selected
-- [ ] Model pricing/quota is reviewed before recurring jobs
+- [ ] No real `.env` files committed [OC-OPENAI]
+- [ ] No API keys/tokens in README/docs/examples [OC-OPENAI]
+- [ ] Auth profiles are not exported into the repository [OC-OPENAI]
+- [ ] Logs are sanitized before sharing [SEC-PRISM]
+- [ ] Tool access is limited per workflow [SEC-PRISM]
+- [ ] Cron jobs use isolated sessions [SEC-PRISM]
+- [ ] External sources are treated as untrusted input [SEC-PRISM]
+- [ ] Fallback model is deliberately selected [OC-MODELS]
+- [ ] Model pricing/quota is reviewed before recurring jobs [NEWS-REUTERS]
 - [ ] Human approval is required for repository write/merge actions
 
 ---
@@ -115,6 +127,8 @@ OpenClaw-style AI agents can connect models, tools, files, web search, logs, ext
 3. ตรวจ repository history และ logs
 4. อัปเดตเครื่องหรือ secret manager ที่ใช้งานจริง
 5. บันทึก incident note เพื่อป้องกันซ้ำ
+
+Credential rotation is a practical response when keys or profiles may have been exposed. [NEWS-SECURITY]
 
 ---
 
@@ -133,3 +147,13 @@ Repository/log cleanup status:
 Prevention measure:
 Owner:
 ```
+
+---
+
+## Reference Links
+
+[OC-OPENAI]: https://docs.openclaw.ai/providers/openai
+[OC-MODELS]: https://docs.openclaw.ai/cli/models
+[NEWS-REUTERS]: https://www.reuters.com/business/retail-consumer/openai-cuts-prices-smaller-models-businesses-scrutinize-ai-spend-2026-07-30/
+[SEC-PRISM]: https://arxiv.org/abs/2603.11853
+[NEWS-SECURITY]: https://www.techradar.com/pro/here-are-the-openclaw-security-risks-you-should-know-about
