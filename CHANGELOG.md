@@ -33,3 +33,4 @@ All notable changes to this repository will be documented in this file.
 - Expanded model-configuration guidance for GPT-5.6 route verification, tier strategy, fallback rules, and aliases.
 - Expanded cron guidance with model-tier selection, pricing/quota verification, stop conditions, and isolated-session control.
 - Expanded security guidance with agent threat model, tool permission standards, and incident note template.
+- Updated `openclaw_openai_gpt_5_x_lesson_th.md` to align with the README, GPT-5.6 operating standard, Sol/Terra/Luna tier strategy, verification-first workflow, and cost/security controls.
