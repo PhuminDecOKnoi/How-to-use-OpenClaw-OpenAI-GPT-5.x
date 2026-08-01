@@ -6,9 +6,14 @@
 
 ## System Flow
 
-> Workflow tone: **Dark** โดยใช้ทั้ง Mermaid theme configuration และ dark canvas/subgraph เพื่อให้พื้นหลังของภาพเป็นโทนเข้มชัดเจน ไม่ใช่เฉพาะสีของ node และเส้นเชื่อม
+> Workflow tone: **Dark** โดยใช้ SVG เป็นภาพหลัก เพื่อให้พื้นหลังและสีของ workflow render คงที่บน GitHub โดยไม่ขึ้นกับข้อจำกัดของ Mermaid theme หรือ theme ของผู้ใช้งาน
 
-> หมายเหตุ: GitHub อาจควบคุมพื้นหลังรอบนอกของ Markdown ตาม theme ของผู้ใช้งาน แต่ในตัว workflow จะมี dark canvas ครอบ diagram เพื่อให้ภาพหลักยังคงเป็นโทนเข้ม
+<p align="center">
+  <img src="../assets/openclaw-openai-gpt5x-workflow-dark.svg" alt="OpenClaw and OpenAI GPT-5.x dark workflow showing channels, gateway, agent session, model provider, tools, and output" width="100%">
+</p>
+
+<details>
+<summary>Mermaid source for maintainers</summary>
 
 ```mermaid
 %%{init: {"theme": "base", "themeVariables": {"darkMode": true, "background": "#0d1117", "mainBkg": "#0d1117", "secondBkg": "#161b22", "primaryColor": "#161b22", "primaryTextColor": "#f0f6fc", "primaryBorderColor": "#58a6ff", "lineColor": "#8b949e", "secondaryColor": "#1f6feb", "tertiaryColor": "#21262d", "clusterBkg": "#0d1117", "clusterBorder": "#30363d", "edgeLabelBackground": "#161b22", "fontFamily": "Inter, Arial, sans-serif"}}}%%
@@ -45,6 +50,8 @@ flowchart TD
 
     style CANVAS fill:#0d1117,stroke:#30363d,stroke-width:2px,color:#f0f6fc;
 ```
+
+</details>
 
 ---
 
