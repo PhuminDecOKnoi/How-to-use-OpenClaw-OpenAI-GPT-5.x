@@ -6,25 +6,28 @@
 
 ## System Flow
 
-> Workflow tone: **Dark** เพื่อให้สอดคล้องกับภาพรวมของ AI-agent / developer documentation และช่วยให้ node, line และ layer แยกจากกันชัดเจนขึ้นบน GitHub
+> Workflow tone: **Dark** โดยใช้ทั้ง Mermaid theme configuration และ dark canvas/subgraph เพื่อให้พื้นหลังของภาพเป็นโทนเข้มชัดเจน ไม่ใช่เฉพาะสีของ node และเส้นเชื่อม
 
 ```mermaid
-%%{init: {"theme": "dark", "themeVariables": {"background": "#0d1117", "primaryColor": "#161b22", "primaryTextColor": "#f0f6fc", "primaryBorderColor": "#58a6ff", "lineColor": "#8b949e", "secondaryColor": "#1f6feb", "tertiaryColor": "#21262d", "fontFamily": "Inter, Arial, sans-serif"}}}%%
+%%{init: {"theme": "base", "themeVariables": {"darkMode": true, "background": "#0d1117", "mainBkg": "#0d1117", "secondBkg": "#161b22", "primaryColor": "#161b22", "primaryTextColor": "#f0f6fc", "primaryBorderColor": "#58a6ff", "lineColor": "#8b949e", "secondaryColor": "#1f6feb", "tertiaryColor": "#21262d", "clusterBkg": "#0d1117", "clusterBorder": "#30363d", "edgeLabelBackground": "#161b22", "fontFamily": "Inter, Arial, sans-serif"}}}%%
 flowchart TD
-    U[User / Trainer / Operator] --> C[Channel Layer<br/>Dashboard / Telegram / CLI]
-    C --> G[OpenClaw Gateway]
-    G --> S[Agent Session]
-    S --> M[OpenAI GPT-5.x Provider]
-    S --> T[Tools Layer]
-    T --> W[Web Search]
-    T --> F[Files]
-    T --> CR[Cron Automation]
-    T --> L[Logs]
-    M --> O[Output<br/>Summary / Report / Action]
-    W --> O
-    F --> O
-    CR --> O
-    L --> O
+    subgraph CANVAS[OpenClaw + OpenAI GPT-5.x Dark Workflow]
+        direction TD
+        U[User / Trainer / Operator] --> C[Channel Layer<br/>Dashboard / Telegram / CLI]
+        C --> G[OpenClaw Gateway]
+        G --> S[Agent Session]
+        S --> M[OpenAI GPT-5.x Provider]
+        S --> T[Tools Layer]
+        T --> W[Web Search]
+        T --> F[Files]
+        T --> CR[Cron Automation]
+        T --> L[Logs]
+        M --> O[Output<br/>Summary / Report / Action]
+        W --> O
+        F --> O
+        CR --> O
+        L --> O
+    end
 
     classDef userLayer fill:#161b22,stroke:#58a6ff,color:#f0f6fc,stroke-width:2px;
     classDef gatewayLayer fill:#1f2937,stroke:#7c3aed,color:#f9fafb,stroke-width:2px;
@@ -37,6 +40,8 @@ flowchart TD
     class M modelLayer;
     class T,W,F,CR,L toolsLayer;
     class O outputLayer;
+
+    style CANVAS fill:#0d1117,stroke:#30363d,stroke-width:2px,color:#f0f6fc;
 ```
 
 ---
