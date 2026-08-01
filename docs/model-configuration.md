@@ -10,7 +10,16 @@
 
 - [`docs/openai-gpt56-operating-standard.md`](openai-gpt56-operating-standard.md)
 - [`docs/cost-control.md`](cost-control.md)
+- [`docs/references.md`](references.md)
 - [`docs/external-research-july-2026.md`](external-research-july-2026.md)
+
+---
+
+## Source Basis
+
+- OpenClaw ใช้ OpenAI provider ID `openai` และ model route pattern `openai/*` สำหรับ OpenAI model references. [OC-OPENAI]
+- คำสั่ง `openclaw models auth`, `models list`, `models set`, `fallbacks`, และ `aliases` อยู่ในกลุ่ม OpenClaw Models CLI. [OC-MODELS]
+- GPT-5.6 Sol/Terra/Luna เป็น model-family/tier ที่อ้างอิงจาก OpenAI official announcement และ Help Center preview. [OA-GPT56] [OA-GPT56-HELP]
 
 ---
 
@@ -21,16 +30,18 @@
 openclaw models auth login --provider openai
 ```
 
-Alternative login patterns:
+ใช้คำสั่ง login ผ่าน OpenClaw Models CLI และ provider ID `openai`. [OC-MODELS] [OC-OPENAI]
+
+Alternative examples:
 
 ```bash
-# ใช้ API-key method เมื่อรองรับในสภาพแวดล้อมนั้น
+# ใช้ API-key auth method เมื่อ environment รองรับ
 openclaw models auth login --provider openai --method api-key
 
-# ใช้ device-code สำหรับเครื่อง headless หรือ remote terminal
+# ใช้ device-code login สำหรับเครื่อง remote/headless
 openclaw models auth login --provider openai --device-code
 
-# แยก profile สำหรับ training/demo/production
+# ใช้ profile แยกสำหรับ training/demo/production
 openclaw models auth login --provider openai --profile-id training-demo
 ```
 
@@ -49,29 +60,19 @@ openclaw models status
 openclaw models status --probe
 ```
 
-> ใช้ model ID จากผลลัพธ์ของ `openclaw models list --provider openai` ก่อนตั้งค่าเสมอ อย่าอ้างอิงชื่อ model จากเอกสารเก่าโดยไม่ตรวจสอบ
+> ใช้ model ID จากผลลัพธ์ของ `openclaw models list --provider openai` ก่อนตั้งค่าเสมอ อย่าอ้างอิงชื่อ model จากเอกสารเก่าโดยไม่ตรวจสอบ. [OC-MODELS] [OC-PROVIDERS]
 
 ---
 
-## July 2026 GPT-5.6 Route Guidance
+## GPT-5.6 Route Strategy
 
-OpenClaw ใช้ provider namespace แบบ:
-
-```text
-openai/*
-```
-
-Route ที่อาจพบในเอกสารหรือ catalog ช่วง July 2026:
-
-| Route pattern | Use only when | Notes |
-|---|---|---|
-| `openai/gpt-5.6` | ปรากฏใน catalog ของบัญชีจริง | ใช้เป็น route แบบรวม/ค่าเริ่มต้นได้เมื่อ verify แล้ว |
-| `openai/gpt-5.6-sol` | ปรากฏใน catalog และงานต้องการ reasoning สูง | เหมาะกับงานยาก เช่น coding, audit-style reasoning, complex agents |
-| `openai/gpt-5.6-terra` | ปรากฏใน catalog | เหมาะกับงานสมดุล quality/cost |
-| `openai/gpt-5.6-luna` | ปรากฏใน catalog | เหมาะกับงานเร็ว เบา ปริมาณมาก และ cron |
-| `openai/<verified-fallback-model-id>` | ตรวจแล้วว่า fallback เหมาะกับงาน | ไม่ควรปล่อยให้ downgrade โดยไม่ตั้งใจ |
-
-> อย่าคัดลอก route จากตารางนี้ไปใช้ production โดยไม่ตรวจด้วย CLI ก่อน เพราะ access, rollout, account type และ auth method อาจไม่เหมือนกัน
+| Tier / route pattern | Use for | Verification rule | Source |
+|---|---|---|---|
+| `openai/gpt-5.6` | Default GPT-5.6 route pattern | Check account/runtime behavior before production | [OC-PROVIDERS] |
+| `openai/gpt-5.6-sol` | Reasoning-heavy work | Use only if visible in live catalog | [OA-GPT56] [OC-MODELS] |
+| `openai/gpt-5.6-terra` | Balanced professional work | Use only if visible in live catalog | [OA-GPT56] [OC-MODELS] |
+| `openai/gpt-5.6-luna` | Lightweight/cost-sensitive work | Use only if visible in live catalog | [OA-GPT56] [OC-MODELS] |
+| `openai/<fallback-model-id>` | Recovery/fallback | Select deliberately; do not allow silent downgrade | [OC-MODELS] |
 
 ---
 
@@ -81,6 +82,8 @@ Route ที่อาจพบในเอกสารหรือ catalog ช�
 # ตั้ง primary model โดยแทน <verified-primary-model-id> ด้วย model ที่ตรวจพบจริง
 openclaw models set "openai/<verified-primary-model-id>"
 ```
+
+The `models set` pattern is part of OpenClaw Models CLI. [OC-MODELS]
 
 ---
 
@@ -94,28 +97,27 @@ openclaw models fallbacks clear
 openclaw models fallbacks add "openai/<verified-fallback-model-id>"
 ```
 
-Fallback policy:
-
-| Workload | Fallback rule |
-|---|---|
-| High-risk legal/audit analysis | Use fallback only if it preserves reasoning quality and source fidelity |
-| Cron/daily summary | Use lower-cost fallback if output remains short and low-risk |
-| Coding/review | Prefer Terra/Sol-class fallback, then require tests or verification |
-| Public content generation | Use fallback only after checking tone and quality |
+Fallbacks should be explicit and verified. [OC-MODELS]
 
 ---
 
 ## Create Aliases
 
 ```bash
-# สร้าง alias เพื่อให้เรียก model ได้ง่ายขึ้นในการสอนหรือ demo
+# สร้าง alias สำหรับงาน reasoning หนัก
 openclaw models aliases add gpt-reasoning "openai/<verified-sol-or-terra-model-id>"
+
+# สร้าง alias สำหรับงานสมดุลคุณภาพ/ต้นทุน
+openclaw models aliases add gpt-balanced "openai/<verified-terra-model-id>"
+
+# สร้าง alias สำหรับงานเบา/cron/cost-sensitive
 openclaw models aliases add gpt-economy "openai/<verified-luna-or-terra-model-id>"
-openclaw models aliases add gpt-fallback "openai/<verified-fallback-model-id>"
 
 # ตรวจรายการ alias ทั้งหมด
 openclaw models aliases list
 ```
+
+Alias commands are managed through OpenClaw Models CLI. [OC-MODELS]
 
 ---
 
@@ -133,21 +135,21 @@ openclaw models status --probe
 
 ## Model Strategy Checklist
 
-- ใช้ model ID ที่ตรวจจาก catalog ปัจจุบัน
-- แยก primary/fallback ให้ชัดเจน
-- ใช้ Sol/Terra เฉพาะงานที่ต้องการ reasoning หรือคุณภาพสูง
-- ใช้ Terra/Luna กับงานทั่วไป งาน cron และงานที่ต้องคุมต้นทุน
-- จำกัด output และ tool calls เมื่อควบคุม cost
-- ตรวจ pricing/quota ก่อนเปิด production หรือ scheduled jobs
-- ทดสอบ probe หลังเปลี่ยน model ทุกครั้ง
-- บันทึก model route และ auth profile ที่ใช้จริงใน runbook ภายใน
+- [ ] ใช้ model ID ที่ตรวจจาก live catalog ปัจจุบัน [OC-MODELS]
+- [ ] แยก primary/fallback ให้ชัดเจน [OC-MODELS]
+- [ ] เลือก Sol/Terra/Luna ตาม risk, reasoning depth, cost, volume [OA-GPT56]
+- [ ] ตรวจ account/organization approval เมื่อใช้ GPT-5.6 preview/rollout access [OA-GPT56-HELP]
+- [ ] ใช้ model tier ที่ต่ำที่สุดที่ยังทำงานได้ปลอดภัยและแม่นยำ [NEWS-REUTERS]
+- [ ] จำกัด output และ tool calls เมื่อควบคุม cost [NEWS-REUTERS]
+- [ ] ทดสอบ probe หลังเปลี่ยน model ทุกครั้ง [OC-MODELS]
 
 ---
 
-## Production Note
+## Reference Links
 
-For July 2026 GPT-5.6 workflows, use this sequence:
-
-```text
-Verify catalog → choose model tier → set primary → set fallback → restart gateway → probe → document result
-```
+[OC-OPENAI]: https://docs.openclaw.ai/providers/openai
+[OC-MODELS]: https://docs.openclaw.ai/cli/models
+[OC-PROVIDERS]: https://docs.openclaw.ai/concepts/model-providers
+[OA-GPT56]: https://openai.com/index/gpt-5-6/
+[OA-GPT56-HELP]: https://help.openai.com/en/articles/20001325-a-preview-of-gpt-56-sol-terra-and-luna
+[NEWS-REUTERS]: https://www.reuters.com/business/retail-consumer/openai-cuts-prices-smaller-models-businesses-scrutinize-ai-spend-2026-07-30/
