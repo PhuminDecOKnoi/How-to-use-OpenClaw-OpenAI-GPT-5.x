@@ -36,3 +36,10 @@ All notable changes to this repository will be documented in this file.
 - Expanded security guidance with agent threat model, tool permission standards, and incident note template.
 - Rewrote and condensed `openclaw_openai_gpt_5_x_lesson_th.md` into a source-linked Thai lesson aligned with README, GPT-5.6 Sol/Terra/Luna strategy, verification-first workflow, cost controls, security controls, workshop checklists, and point-level source links.
 - Added inline source markers such as `[OC-OPENAI]`, `[OC-MODELS]`, `[OC-PROVIDERS]`, `[OA-GPT56]`, `[OA-GPT56-HELP]`, `[NEWS-REUTERS]`, `[NEWS-AXIOS]`, `[NEWS-BI]`, and `[SEC-PRISM]` near supported claims, command patterns, pricing cautions, and security controls.
+
+### Source Handling
+
+- Official OpenClaw and OpenAI docs are used for commands, provider routes, model-family wording, and access caveats.
+- News sources are used only as date-bound pricing-change signals.
+- Security research and practitioner security reporting are used for threat-model and risk-control guidance.
+- Community or hands-on articles are not treated as canonical configuration sources.
