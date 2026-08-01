@@ -1,27 +1,43 @@
-# บทเรียน: การใช้งาน OpenClaw + OpenAI / GPT 5.x
+# บทเรียน: การใช้งาน OpenClaw + OpenAI GPT-5.x / GPT-5.6
 
-> เวอร์ชันเอกสาร: v1.0  
-> รูปแบบ: บทเรียนสำหรับสอน / แชร์ / ใช้เป็นคู่มือปฏิบัติ  
+> เวอร์ชันเอกสาร: v1.1  
+> สถานะ: ปรับให้สอดคล้องกับ `README.md` และมาตรฐาน GPT-5.6 Operating Standard  
+> รูปแบบ: บทเรียนภาษาไทยสำหรับสอน / workshop / self-study / runbook  
 > กลุ่มเป้าหมาย: ผู้เริ่มต้นถึงระดับปฏิบัติการ  
-> ตัวอย่างในเอกสารนี้เป็น “งานทั่วไป” ไม่อิงงานเฉพาะของผู้ใช้
+> หลักสำคัญ: **ตรวจสอบ model catalog ก่อนตั้งค่าเสมอ ไม่ hardcode model ID / ราคา / สิทธิ์การใช้งานจากความจำ**
 
 ---
 
-## ภาพรวมบทเรียน
+## แผนที่เอกสารที่ควรอ่านประกอบ
 
-บทเรียนนี้อธิบายการติดตั้ง ตั้งค่า และใช้งาน **OpenClaw** ร่วมกับ **OpenAI / GPT 5.x** เพื่อสร้าง AI Agent ที่สามารถทำงานผ่าน Dashboard, Terminal, Telegram, Cron Automation, Web Search และไฟล์ในเครื่องได้อย่างปลอดภัย
+| เอกสาร | ใช้เพื่อ |
+|---|---|
+| [`README.md`](README.md) | ภาพรวม repo, architecture, quick start และ documentation map |
+| [`docs/architecture.md`](docs/architecture.md) | เข้าใจ flow: Channel → Gateway → Agent Session → Model → Tools → Output |
+| [`docs/installation.md`](docs/installation.md) | ติดตั้ง OpenClaw และตรวจ gateway/dashboard |
+| [`docs/model-configuration.md`](docs/model-configuration.md) | ตั้ง OpenAI provider, primary model, fallback และ alias |
+| [`docs/openai-gpt56-operating-standard.md`](docs/openai-gpt56-operating-standard.md) | มาตรฐาน OpenClaw + OpenAI GPT-5.6 จากข้อมูลภายนอก July 2026 |
+| [`docs/cost-control.md`](docs/cost-control.md) | ควบคุมต้นทุน model tier, output budget, tool calls และ cron |
+| [`docs/security.md`](docs/security.md) | token hygiene, agent threat model, tool permissions และ log sanitization |
+| [`docs/cron-automation.md`](docs/cron-automation.md) | ออกแบบ scheduled job แบบ cost-safe และ risk-aware |
+| [`docs/external-research-july-2026.md`](docs/external-research-july-2026.md) | บันทึกแหล่งข้อมูลภายนอกและเหตุผลการปรับมาตรฐาน |
 
-เมื่อเรียนจบ ผู้เรียนควรทำได้ดังนี้
+---
 
-1. เข้าใจโครงสร้าง OpenClaw + OpenAI
-2. ติดตั้งและเปิด OpenClaw Gateway ได้
-3. เชื่อม OpenAI API Key กับ OpenClaw ได้
-4. ตั้งค่า GPT 5.x เป็น Primary / Fallback Model ได้
-5. ตรวจสอบสถานะ model, gateway, cron และ logs ได้
-6. สร้าง automation ด้วย cron job ได้
-7. ใช้ GPT ให้เหมาะกับงานทั่วไป เช่น สรุปข่าว สรุปไฟล์ สร้างรายงาน เตือนงาน และ draft เอกสาร
-8. ควบคุมค่าใช้จ่ายและลดปัญหา rate limit / context overflow ได้
-9. แก้ปัญหาพื้นฐานได้อย่างเป็นระบบ
+## ผลลัพธ์การเรียนรู้
+
+เมื่อเรียนจบบทเรียนนี้ ผู้เรียนควรสามารถ:
+
+1. อธิบายบทบาทของ OpenClaw ในฐานะ AI-agent gateway/orchestration layer ได้
+2. อธิบายความสัมพันธ์ระหว่าง OpenClaw, OpenAI provider, GPT-5.x / GPT-5.6 และ tools ได้
+3. ติดตั้งและตรวจสอบ OpenClaw Gateway / Dashboard ได้
+4. Login OpenAI provider ผ่าน OpenClaw ได้อย่างปลอดภัย
+5. ตรวจ model catalog ด้วย `openclaw models list --provider openai` ก่อนตั้งค่าได้
+6. เลือก model tier แบบ Sol / Terra / Luna ให้เหมาะกับงาน ความเสี่ยง และต้นทุนได้
+7. ตั้ง primary model, fallback model และ alias โดยใช้ `<verified-model-id>` ได้
+8. ออกแบบ prompt, web search, file workflow และ cron automation แบบจำกัด scope ได้
+9. ใช้ security checklist เพื่อป้องกัน API key, token, logs และ prompt/output leakage ได้
+10. แก้ปัญหาเบื้องต้น เช่น auth error, model not found, rate limit, context overflow และ cron failure ได้
 
 ---
 
@@ -29,81 +45,85 @@
 
 ## 1.1 ความหมาย
 
-OpenClaw คือระบบ AI Agent ที่รันบนเครื่องของผู้ใช้ ทำหน้าที่เชื่อมต่อระหว่างผู้ใช้, ช่องทางสนทนา, model AI, เครื่องมือเสริม และงาน automation
+OpenClaw คือระบบ AI Agent / Gateway ที่ทำหน้าที่เชื่อมต่อระหว่างผู้ใช้ ช่องทางสื่อสาร model provider เครื่องมือเสริม และงาน automation
 
-โครงสร้างพื้นฐาน:
+ใน repository นี้ให้มอง OpenClaw เป็น **ตัวกลางควบคุมงาน** ไม่ใช่ตัว model โดยตรง
 
 ```text
-User
- ↓
-Dashboard / Telegram / Terminal
- ↓
+User / Trainer / Operator
+        ↓
+Channel Layer: Dashboard / Telegram / CLI
+        ↓
 OpenClaw Gateway
- ↓
-AI Agent Session
- ↓
-OpenAI GPT 5.x
- ↓
-Tools เช่น Web Search, Files, Cron, Browser, Telegram
+        ↓
+Agent Session
+        ↓
+OpenAI GPT-5.x / GPT-5.6 Provider
+        ↓
+Tools Layer: Web Search / Files / Cron / Logs
+        ↓
+Output: Summary / Report / Action-ready response
 ```
 
-## 1.2 จุดเด่นของ OpenClaw
+ดูภาพ workflow แบบ dark SVG ได้ใน [`README.md`](README.md) และ [`docs/architecture.md`](docs/architecture.md)
 
-| ความสามารถ | คำอธิบาย |
-|---|---|
-| Local Gateway | มี gateway บนเครื่องผู้ใช้ |
-| Dashboard | ควบคุม agent ผ่าน browser |
-| Model Provider | เชื่อมต่อ OpenAI หรือ provider อื่นได้ |
-| Cron Automation | ตั้งงานให้รันอัตโนมัติได้ |
-| Telegram Channel | ส่งผลลัพธ์ไป Telegram ได้ |
-| File Operation | อ่าน/เขียนไฟล์ สร้างโฟลเดอร์ จัดการ workspace ได้ |
-| Tool Use | เรียกใช้ web search, browser, script หรือเครื่องมืออื่นตาม config |
+## 1.2 จุดเด่นที่ควรสอนผู้เรียน
+
+| ความสามารถ | คำอธิบาย | จุดควบคุม |
+|---|---|---|
+| Gateway | จัดการ routing, session, provider และ tools | ตรวจ `openclaw gateway status` |
+| Dashboard | ใช้ browser ควบคุม agent และตรวจสถานะ | เปิดด้วย `openclaw dashboard` |
+| Model Provider | เชื่อม OpenAI ผ่าน provider namespace `openai/*` | ตรวจ catalog ก่อนตั้งค่า |
+| Tool Use | ใช้ web search, files, cron, logs หรือ integration อื่น | จำกัด scope และ permission |
+| Cron Automation | ตั้งงานอัตโนมัติรายวัน/รายสัปดาห์ | ใช้ isolated session และ output budget |
+| Security | ป้องกัน key/token/logs รั่วไหล | ใช้ checklist จาก `docs/security.md` |
 
 ---
 
-# บทที่ 2: OpenAI / GPT 5.x คืออะไรในบริบท OpenClaw
+# บทที่ 2: OpenAI GPT-5.x / GPT-5.6 ในบริบท OpenClaw
 
-## 2.1 ความหมายของ GPT 5.x
+## 2.1 คำจำกัดความในบทเรียนนี้
 
-ในบทเรียนนี้ คำว่า **GPT 5.x** หมายถึง model ตระกูล GPT รุ่นใหม่ที่ใช้ผ่าน OpenAI API หรือผ่าน model reference ที่ OpenClaw รองรับ เช่น
-
-```text
-openai/gpt-5.4-mini
-openai/gpt-5.4-nano
-openai/gpt-5.4
-openai/gpt-5.x
-```
-
-หมายเหตุ: ชื่อ model จริงขึ้นอยู่กับบัญชี, provider, OpenClaw version และ model catalog ที่ติดตั้งอยู่ ควรตรวจด้วยคำสั่ง:
-
-```bash
-openclaw models list --provider openai
-```
-
-## 2.2 หลักการเลือก model
-
-| ประเภทงาน | Model ที่เหมาะ |
-|---|---|
-| งานทั่วไป / chat / สรุป / draft | GPT mini |
-| งานเบา / cron / classification | GPT nano |
-| งานซับซ้อน / reasoning / วิเคราะห์เอกสารยาว | GPT full / mini ตามงบประมาณ |
-| งานทดลอง / demo | nano หรือ mini |
-| งาน production สำคัญ | mini เป็น primary และ nano เป็น fallback |
-
-## 2.3 แนวคิด Primary + Fallback
-
-แนวทางแนะนำสำหรับระบบทั่วไป:
+ในบทเรียนนี้คำว่า **GPT-5.x / GPT-5.6** หมายถึง model family/tier ของ OpenAI ที่ใช้งานผ่าน OpenClaw provider namespace:
 
 ```text
-Primary   = GPT mini
-Fallback  = GPT nano
+openai/*
 ```
 
-เหตุผล:
+ตัวอย่าง pattern ที่ใช้ในเอกสารนี้:
 
 ```text
-GPT mini = คุณภาพดี เหมาะกับงานส่วนใหญ่
-GPT nano = ประหยัด เหมาะเป็น fallback และงานเบา
+openai/<verified-model-id>
+openai/gpt-5.6
+openai/gpt-5.6-sol
+openai/gpt-5.6-terra
+openai/gpt-5.6-luna
+```
+
+> หมายเหตุสำคัญ: ตัวอย่าง route ข้างต้นเป็น operating pattern ตามเอกสาร repo นี้ ผู้ใช้ต้องตรวจว่าบัญชี/region/runtime ของตนเห็น model จริงหรือไม่ด้วยคำสั่ง `openclaw models list --provider openai` ก่อนตั้งค่า production ทุกครั้ง
+
+## 2.2 เปลี่ยนจาก mini/nano เป็น Sol/Terra/Luna
+
+บทเรียนเวอร์ชันก่อนหน้าเคยใช้แนวคิด `mini/nano` และตัวอย่าง `gpt-5.4-mini/nano` ซึ่งไม่สอดคล้องกับ README ล่าสุดแล้ว
+
+มาตรฐานใหม่ของ repo นี้คือ:
+
+| Tier | เหมาะกับ | หลีกเลี่ยงเมื่อ |
+|---|---|---|
+| GPT-5.6 Sol | งาน reasoning หนัก, coding, legal/audit-style analysis, complex agents | งาน cron ปริมาณมากหรืองานสั้นที่ต้องคุมต้นทุน |
+| GPT-5.6 Terra | งานเอกสาร งานสอน งาน professional ทั่วไป และ web/search summary | งานที่ต้องการ reasoning สูงสุดหรือ ultra-low-cost volume |
+| GPT-5.6 Luna | งานสั้น งาน classification งาน cron งานสรุปเบา | งาน high-stakes reasoning หรือวิเคราะห์เอกสารซับซ้อน |
+
+## 2.3 กฎหลักของบทเรียน
+
+```text
+Verify catalog → choose model tier → set primary → set fallback → restart gateway → probe → document result
+```
+
+ผู้เรียนต้องจำว่า:
+
+```text
+ห้าม hardcode model ID, ราคา, quota หรือสิทธิ์การใช้งาน โดยไม่ตรวจ catalog/account access ก่อน
 ```
 
 ---
@@ -112,323 +132,399 @@ GPT nano = ประหยัด เหมาะเป็น fallback และ�
 
 ## 3.1 ตรวจ Node.js และ npm
 
-เปิด Terminal แล้วรัน:
-
 ```bash
+# ตรวจ Node.js version
 node --version
+
+# ตรวจ npm version
 npm --version
 ```
 
-ถ้ายังไม่มี Node.js สามารถติดตั้งด้วย Homebrew:
+ถ้ายังไม่มี Node.js บน macOS สามารถติดตั้งด้วย Homebrew:
 
 ```bash
+# ติดตั้ง Node.js ผ่าน Homebrew
 brew install node
 ```
 
 ## 3.2 ตรวจ shell
 
 ```bash
-echo $SHELL
+# ตรวจ shell ปัจจุบัน
+ echo $SHELL
 ```
 
-ส่วนใหญ่บน macOS จะเป็น:
+ตัวอย่างผลลัพธ์ที่พบบ่อยบน macOS:
 
-```text
+```console
 /bin/zsh
 ```
 
-## 3.3 สร้างโฟลเดอร์สำหรับงาน AI Agent
-
-ตัวอย่างทั่วไป:
+## 3.3 สร้าง workspace สำหรับ workshop
 
 ```bash
-mkdir -p "$HOME/AI-Agent-Lab"
+# สร้าง workspace สำหรับทดลอง AI Agent
 mkdir -p "$HOME/AI-Agent-Lab/input"
 mkdir -p "$HOME/AI-Agent-Lab/output"
 mkdir -p "$HOME/AI-Agent-Lab/templates"
 mkdir -p "$HOME/AI-Agent-Lab/logs"
-```
+mkdir -p "$HOME/AI-Agent-Lab/archive"
 
-ตรวจผล:
-
-```bash
+# ตรวจโครงสร้าง workspace
 ls -la "$HOME/AI-Agent-Lab"
 ```
 
 ---
 
-# บทที่ 4: ติดตั้ง OpenClaw
+# บทที่ 4: ติดตั้งและตรวจ OpenClaw
 
 ## 4.1 ติดตั้งด้วย Installer Script
 
 ```bash
+# ติดตั้ง OpenClaw ด้วย installer script
 curl -fsSL https://openclaw.ai/install.sh | bash
 ```
 
 ## 4.2 ติดตั้งด้วย npm
 
 ```bash
+# ติดตั้ง OpenClaw เป็น global package
 npm install -g openclaw@latest
+
+# เริ่ม onboarding และติดตั้ง daemon/service
 openclaw onboard --install-daemon
 ```
 
-## 4.3 ตรวจว่า OpenClaw ติดตั้งสำเร็จ
+## 4.3 ตรวจการติดตั้ง
 
 ```bash
+# ตรวจ version และสุขภาพระบบ
 openclaw --version
 openclaw doctor
+
+# ตรวจสถานะ gateway
 openclaw gateway status
 ```
 
-ผลที่ต้องการ:
+ตัวอย่างผลลัพธ์ที่ต้องการ:
 
-```text
-Runtime: running
-Connectivity probe: ok
+```console
+Gateway: running
 Dashboard: http://127.0.0.1:18789/
+Connectivity probe: ok
 ```
 
 ---
 
-# บทที่ 5: เปิด Gateway และ Dashboard
+# บทที่ 5: Gateway และ Dashboard
 
-## 5.1 Start / Restart Gateway
-
-คำสั่ง restart ที่ถูกต้อง:
+## 5.1 Restart Gateway
 
 ```bash
+# restart gateway หลังเปลี่ยน provider/model/tool configuration
 openclaw gateway restart
 ```
 
-ไม่ใช่:
-
-```bash
-openclaw restart
-```
+> ไม่ใช้ `openclaw restart` หากคำสั่งนั้นไม่ได้รองรับใน version ที่ใช้งาน
 
 ## 5.2 เปิด Dashboard
 
 ```bash
+# เปิด Dashboard ผ่าน OpenClaw CLI
 openclaw dashboard
 ```
 
-หรือ:
+macOS local URL option:
 
 ```bash
+# เปิด local dashboard ผ่าน browser โดยตรง
 open http://127.0.0.1:18789
 ```
 
-## 5.3 ตรวจสถานะ Gateway
-
-```bash
-openclaw gateway status
-```
-
-จุดที่ควรดู:
+## 5.3 จุดตรวจที่ควรอธิบายใน workshop
 
 | จุดตรวจ | ความหมาย |
 |---|---|
-| `Runtime: running` | Gateway ทำงานอยู่ |
-| `Connectivity probe: ok` | CLI ติดต่อ gateway ได้ |
-| `Listening: 127.0.0.1:18789` | เปิด port แล้ว |
-| `Dashboard URL` | เปิดหน้า control UI ได้ |
+| Gateway running | OpenClaw service พร้อมรับงาน |
+| Connectivity probe ok | CLI ติดต่อ gateway ได้ |
+| Dashboard URL | UI พร้อมใช้งาน |
+| Logs | ใช้ตรวจปัญหาเมื่อ command/probe fail |
 
 ---
 
-# บทที่ 6: สร้างและเชื่อม OpenAI API Key
+# บทที่ 6: เชื่อม OpenAI Provider อย่างปลอดภัย
 
-## 6.1 หลักความปลอดภัย
+## 6.1 หลักความปลอดภัยก่อน login
 
-ห้ามส่งข้อมูลต่อไปนี้ใน chat, screenshot หรือเอกสารสาธารณะ:
+ห้ามเผยแพร่ข้อมูลต่อไปนี้ใน README, issue, PR, screenshot, slide, chat หรือ shared terminal:
 
 ```text
 OpenAI API key
-Telegram bot token
 Gateway token
-Password
-.env file
+Telegram bot token
 OAuth token
-Secret key
+Password
+.env file with real values
+Auth profile
+Raw logs containing secrets
+Customer/student/private data
 ```
 
-## 6.2 Login OpenAI provider ใน OpenClaw
+## 6.2 Login OpenAI provider
 
 ```bash
+# เชื่อม OpenAI provider ผ่าน OpenClaw
 openclaw models auth login --provider openai
 ```
 
-จากนั้นวาง API key ใน Terminal เท่านั้น
-
-## 6.3 ตรวจ auth
+รูปแบบอื่นที่อาจใช้ได้ตาม environment:
 
 ```bash
+# Login ด้วย API key method เมื่อรองรับ
+openclaw models auth login --provider openai --method api-key
+
+# Login จากเครื่อง headless หรือ remote terminal
+openclaw models auth login --provider openai --device-code
+
+# แยก profile สำหรับ training/demo/production
+openclaw models auth login --provider openai --profile-id training-demo
+```
+
+## 6.3 ตรวจ auth profile
+
+```bash
+# ตรวจ OpenAI auth profile ที่ใช้งานได้
+openclaw models auth list --provider openai
+```
+
+## 6.4 Probe provider/model
+
+```bash
+# ตรวจสถานะ model และทดสอบการเรียกใช้งาน
 openclaw models status
-```
-
-ควรเห็นข้อมูลลักษณะ:
-
-```text
-openai effective=profiles ... api_key=1
-```
-
-## 6.4 Probe model
-
-```bash
 openclaw models status --probe
 ```
 
-ถ้าผ่านควรเห็นสถานะ `ok`
+ถ้าพบ error ให้ดูบทที่ 18 และ [`docs/troubleshooting.md`](docs/troubleshooting.md)
 
 ---
 
-# บทที่ 7: ตั้ง GPT 5.x เป็น Primary Model
+# บทที่ 7: ตรวจ Model Catalog และเลือก Tier
 
-## 7.1 ตรวจ model ที่มีในบัญชี
+## 7.1 ตรวจ model catalog ก่อนเสมอ
 
 ```bash
+# ตรวจ model ที่ OpenAI provider และ account นี้ใช้งานได้จริง
 openclaw models list --provider openai
 ```
 
-## 7.2 ตั้ง model หลัก
+ให้ผู้เรียนบันทึกผลลัพธ์ที่เห็นจริง เช่น:
 
-ตัวอย่าง:
-
-```bash
-openclaw models set openai/gpt-5.4-mini
+```text
+Available OpenAI routes found in this account:
+- openai/<verified-model-id-1>
+- openai/<verified-model-id-2>
+- openai/<verified-model-id-3>
 ```
 
-## 7.3 ตั้ง fallback
+## 7.2 Decision Rule สำหรับเลือก tier
+
+| คำถาม | ถ้าใช่ | Model tier ที่ควรพิจารณา |
+|---|---|---|
+| งานต้องใช้ reasoning ลึกหรือ high-stakes หรือไม่ | ใช่ | Sol หรือ Terra |
+| งานเป็นเอกสาร/สรุป/งานสอนทั่วไปหรือไม่ | ใช่ | Terra |
+| งานสั้น รันซ้ำ หรือปริมาณมากหรือไม่ | ใช่ | Luna หรือ Terra |
+| งานเป็น cron ที่รันทุกวันหรือไม่ | ใช่ | Luna/Terra พร้อม output budget |
+| งานเกี่ยวกับกฎหมาย/audit/source fidelity หรือไม่ | ใช่ | Sol/Terra พร้อม citation/source check |
+
+## 7.3 ห้ามใช้ชื่อ model จากความจำ
+
+ไม่ควรสอนแบบนี้:
 
 ```bash
+# ไม่แนะนำ: hardcode model โดยไม่ตรวจ catalog
+openclaw models set openai/gpt-5.6-sol
+```
+
+ควรสอนแบบนี้:
+
+```bash
+# แนะนำ: ตรวจ catalog ก่อน แล้วแทนค่าด้วย model ที่พบจริง
+openclaw models list --provider openai
+openclaw models set "openai/<verified-primary-model-id>"
+```
+
+---
+
+# บทที่ 8: ตั้ง Primary Model และ Fallback
+
+## 8.1 ตั้ง primary model
+
+```bash
+# ตั้ง primary model จาก route ที่ตรวจพบจริง
+openclaw models set "openai/<verified-primary-model-id>"
+```
+
+ตัวอย่างแนวคิด:
+
+```text
+งานสอนทั่วไป      → primary อาจเป็น Terra
+งาน reasoning หนัก → primary อาจเป็น Sol
+งาน cron เบา      → primary อาจเป็น Luna หรือ Terra
+```
+
+## 8.2 ตั้ง fallback อย่างตั้งใจ
+
+```bash
+# ล้าง fallback เดิมก่อน เพื่อป้องกัน fallback ที่ไม่ตั้งใจ
 openclaw models fallbacks clear
-openclaw models fallbacks add openai/gpt-5.4-nano
+
+# ตั้ง fallback ด้วย model ที่ตรวจพบจริง
+openclaw models fallbacks add "openai/<verified-fallback-model-id>"
 ```
 
-## 7.4 Restart และตรวจซ้ำ
+## 8.3 Fallback policy
+
+| งาน | Fallback ที่เหมาะ | หมายเหตุ |
+|---|---|---|
+| งานสอน/demo | model ที่ถูกกว่าได้ | ยอมรับคุณภาพลดลงเล็กน้อย |
+| งานเอกสารทั่วไป | tier ใกล้เคียงหรือเล็กกว่า | ต้องตรวจ output |
+| งาน legal/audit/coding สำคัญ | tier ใกล้เคียงเท่านั้น | หลีกเลี่ยง silent downgrade |
+| Cron high-risk | อาจ disable fallback | ลดความเสี่ยงของ output คุณภาพต่ำ |
+
+## 8.4 Restart และ probe
 
 ```bash
+# restart gateway เพื่อให้ configuration ใหม่มีผล
 openclaw gateway restart
+
+# ตรวจสถานะและ probe
 openclaw models status
 openclaw models status --probe
 ```
 
-ผลที่ต้องการ:
+ตัวอย่างบันทึกผลสำหรับ workshop:
 
 ```text
-Default   : openai/gpt-5.4-mini
-Fallbacks : openai/gpt-5.4-nano
-Probe     : ok
+Primary model: openai/<verified-primary-model-id>
+Fallback model: openai/<verified-fallback-model-id>
+Probe result: ok / failed
+Checked by:
+Checked at:
 ```
 
 ---
 
-# บทที่ 8: การตั้ง Alias ให้เรียก model ง่าย
+# บทที่ 9: Alias Standard สำหรับการสอน
 
-## 8.1 เพิ่ม alias
+## 9.1 เหตุผลที่ควรใช้ alias
 
-```bash
-openclaw models aliases add gpt-mini openai/gpt-5.4-mini
-openclaw models aliases add gpt-nano openai/gpt-5.4-nano
-openclaw models aliases add GPT openai/gpt-5.4-mini
-```
+Alias ทำให้ผู้เรียนเข้าใจง่ายขึ้น โดยไม่ต้องจำ model ID จริงทุกครั้ง และช่วยให้เอกสาร workshop ใช้ซ้ำได้
 
-## 8.2 ตรวจ alias
+## 9.2 Alias ที่แนะนำ
 
 ```bash
+# Alias สำหรับงาน reasoning หนัก
+openclaw models aliases add gpt-reasoning "openai/<verified-sol-or-terra-model-id>"
+
+# Alias สำหรับงานสมดุล คุณภาพ/ต้นทุน
+openclaw models aliases add gpt-balanced "openai/<verified-terra-model-id>"
+
+# Alias สำหรับงานเบา/cron/cost-sensitive
+openclaw models aliases add gpt-economy "openai/<verified-luna-or-terra-model-id>"
+
+# ตรวจ alias ทั้งหมด
 openclaw models aliases list
 ```
 
-## 8.3 แก้ alias ที่ผิด
+## 9.3 แก้ alias ที่ผิด
 
 ```bash
-openclaw models aliases remove GPT
-openclaw models aliases add GPT openai/gpt-5.4-mini
+# ลบ alias ที่ตั้งผิด แล้วเพิ่มใหม่
+openclaw models aliases remove gpt-economy
+openclaw models aliases add gpt-economy "openai/<verified-luna-or-terra-model-id>"
 ```
 
-ถ้า error ว่า `Alias not found` แปลว่าไม่มี alias นั้นอยู่แล้ว ไม่ใช่ปัญหาใหญ่
+ถ้าเจอ `Alias not found` ให้ถือว่า alias นั้นยังไม่มี ไม่ใช่ปัญหาร้ายแรง
 
 ---
 
-# บทที่ 9: ออกแบบ Model Strategy สำหรับงานทั่วไป
+# บทที่ 10: Model Strategy สำหรับงานจริง
 
-## 9.1 Strategy ที่แนะนำ
+## 10.1 Strategy ตาม README ล่าสุด
 
-```text
-Primary: GPT mini
-Fallback: GPT nano
-```
-
-## 9.2 แยกตามรูปแบบงาน
-
-| งานทั่วไป | Model แนะนำ | เหตุผล |
+| Use case | Tier strategy | Control |
 |---|---|---|
-| สรุปข้อความสั้น | GPT nano | ประหยัดและเร็ว |
-| สรุปเอกสารระดับกลาง | GPT mini | คุณภาพดีกว่า |
-| เขียนอีเมล | GPT mini หรือ nano | ขึ้นกับความสำคัญ |
-| สร้างรายงาน | GPT mini | คุมโครงสร้างได้ดี |
-| จัดหมวดข้อมูล | GPT nano | ใช้ token น้อย |
-| วิเคราะห์ปัญหา | GPT mini | reasoning ดีกว่า |
-| Cron รายวัน | GPT nano | ลดค่าใช้จ่าย |
-| Cron รายเดือน | GPT mini | คุณภาพสำคัญกว่า |
+| Daily Brief | Luna/Terra | จำกัด source และ output |
+| Document Summary | Terra | chunk ไฟล์ ไม่อ่านทั้งไฟล์ยาวโดยไม่จำเป็น |
+| Classification | Luna | output เป็น JSON/table และจำกัดคำอธิบาย |
+| Web Search Agent | Terra/Luna | จำกัด query และตรวจ source |
+| Cron Automation | Luna/Terra | isolated session + output budget |
+| Telegram Agent | Luna/Terra | reset session เมื่อ context ใหญ่ |
+| Legal / Audit-style Analysis | Sol/Terra | ต้อง preserve source basis และ citation |
+| Coding / Review | Sol/Terra | ต้องมี verification/test step |
+
+## 10.2 หลักเลือก model แบบมืออาชีพ
+
+```text
+ใช้ model ใหญ่เมื่อความเสี่ยงสูง
+ใช้ model กลางเมื่อความสมดุลสำคัญ
+ใช้ model เล็กเมื่อเป็นงานสั้น/ซ้ำ/ปริมาณมาก
+ตรวจผลลัพธ์ทุกครั้งก่อนใช้จริง
+```
 
 ---
 
-# บทที่ 10: Prompt Design สำหรับ GPT 5.x
+# บทที่ 11: Prompt Design สำหรับ GPT-5.x / GPT-5.6
 
-## 10.1 โครงสร้าง Prompt ที่ดี
+## 11.1 โครงสร้าง prompt ที่ควรสอน
 
 ```text
-บทบาท:
-คุณคือ...
+Role:
+ระบุบทบาทของ AI
 
-งาน:
-ทำอะไร
+Task:
+ระบุงานที่ต้องทำ
 
-ข้อมูล:
-ให้ข้อมูลที่จำเป็น
+Context:
+ให้ข้อมูลที่จำเป็นเท่านั้น
 
-ข้อจำกัด:
-ห้ามทำอะไร / จำกัดความยาว / ใช้แหล่งใด
+Constraints:
+จำกัดความยาว, source, tool use, format, language
 
-รูปแบบผลลัพธ์:
-ต้องตอบเป็นหัวข้อ ตาราง JSON หรือ bullet
+Output format:
+ระบุรูปแบบผลลัพธ์ เช่น table, JSON, bullet, summary
+
+Quality rule:
+ถ้าข้อมูลไม่พอ ให้แจ้งว่าไม่พอ อย่าเดา
 ```
 
-## 10.2 ตัวอย่าง Prompt: สรุปรายงานการประชุม
+## 11.2 ตัวอย่าง prompt: executive summary
 
-```text
-บทบาท:
-คุณคือผู้ช่วยสรุปรายงานการประชุม
+```markdown
+Role:
+คุณคือผู้ช่วยสรุปรายงานการประชุมสำหรับผู้บริหาร
 
-งาน:
+Task:
 สรุปข้อความประชุมด้านล่างให้เป็น executive summary
 
-ข้อจำกัด:
+Constraints:
 - ตอบภาษาไทย
 - ไม่เกิน 500 คำ
 - แยก Action Items ให้ชัด
 - ถ้าข้อมูลไม่พอ ให้ระบุว่า “ข้อมูลไม่เพียงพอ”
+- ห้ามเพิ่มข้อเท็จจริงที่ไม่มีในข้อมูล
 
-รูปแบบ:
+Output format:
 1) สรุปภาพรวม
 2) ประเด็นสำคัญ
 3) Action Items
 4) ความเสี่ยง/ข้อควรติดตาม
 ```
 
-## 10.3 ตัวอย่าง Prompt: เขียนอีเมลธุรกิจ
+## 11.3 ตัวอย่าง prompt: classification แบบควบคุม output
 
-```text
-เขียนอีเมลภาษาไทยแบบสุภาพถึงลูกค้า
-วัตถุประสงค์: แจ้งเลื่อนกำหนดส่งงานจากวันศุกร์เป็นวันจันทร์
-น้ำเสียง: มืออาชีพ กระชับ รับผิดชอบ
-ความยาว: ไม่เกิน 180 คำ
-ให้มี subject ด้วย
-```
-
-## 10.4 ตัวอย่าง Prompt: จัดหมวด ticket support
-
-```text
+```markdown
 จัดหมวดข้อความต่อไปนี้เป็นหนึ่งในหมวด:
 Billing, Technical, Account, Feature Request, Other
 
@@ -443,190 +539,222 @@ Billing, Technical, Account, Feature Request, Other
 "ฉันล็อกอินไม่ได้หลังจากเปลี่ยนเบอร์โทรศัพท์"
 ```
 
----
+## 11.4 Output budget
 
-# บทที่ 11: ใช้ Web Search กับงานทั่วไป
+ทุก prompt สำหรับ production หรือ cron ควรมี output budget เช่น:
 
-## 11.1 ตั้งค่า Web Search
-
-```bash
-openclaw configure --section web
+```text
+- ตอบไม่เกิน 500 คำ
+- แสดงไม่เกิน 5 bullet points
+- ไม่ใช้ตารางถ้าไม่จำเป็น
+- ถ้า source ไม่พอ ให้แจ้งข้อจำกัด
 ```
 
-ตัวเลือกทั่วไป:
+---
 
-| Provider | เหมาะกับ |
-|---|---|
-| DuckDuckGo | ทดสอบเร็ว ไม่ต้องใช้ key |
-| Brave | ใช้งานจริง เสถียรกว่า |
-| Gemini Search | ต้องการ grounding/citation |
+# บทที่ 12: ใช้ Web Search อย่างปลอดภัย
 
-หลังตั้งค่า:
+## 12.1 ตั้งค่า Web Search
 
 ```bash
+# ตั้งค่า web provider ตาม environment ที่ใช้งาน
+openclaw configure --section web
+
+# restart gateway หลังตั้งค่า
 openclaw gateway restart
 ```
 
-## 11.2 ตัวอย่างงาน: Daily General News Brief
+## 12.2 Prompt ตัวอย่าง: Daily Technology Brief
 
-Prompt ตัวอย่าง:
-
-```text
+```markdown
+Task:
 ค้นข่าวเทคโนโลยีสำคัญใน 24 ชั่วโมงล่าสุด
-จำกัดไม่เกิน 3 ข่าว
-สรุปข่าวละไม่เกิน 4 บรรทัด
-ระบุผลกระทบต่อคนทำงานทั่วไป
-ส่งผลเป็นภาษาไทย
-ถ้า web_search ใช้งานไม่ได้ ให้แจ้งข้อจำกัดชัดเจน
+
+Constraints:
+- จำกัดไม่เกิน 3 ข่าว
+- สรุปข่าวละไม่เกิน 4 บรรทัด
+- ระบุแหล่งที่มาเมื่อมี source
+- ถ้า web search ใช้งานไม่ได้ ให้แจ้งข้อจำกัด
+- อย่าอ่าน PDF เต็มฉบับถ้าไม่จำเป็น
+
+Output:
+1) ข่าวสำคัญ
+2) ผลกระทบต่อผู้ใช้งานทั่วไป
+3) Source list
 ```
 
-## 11.3 ข้อควรระวัง
+## 12.3 Web Search Guardrails
 
 ```text
-- อย่าค้นหลายเว็บเกินไปใน cron เดียว
-- จำกัดผลลัพธ์ไม่เกิน 3–5 รายการ
-- อย่าให้เปิด PDF หรือ full text ถ้าไม่จำเป็น
-- ระบุว่าแหล่งใดเป็นแหล่งหลัก แหล่งใดใช้ cross-check
+จำกัดจำนวน query
+จำกัดจำนวน source
+ตรวจวันเผยแพร่และวันที่เกิดเหตุ
+แยก official source ออกจาก news/community source
+ไม่ใช้ community post เป็น source หลักสำหรับ config/commands
 ```
 
 ---
 
-# บทที่ 12: การใช้งานไฟล์ทั่วไป
+# บทที่ 13: File Workflow สำหรับงานสรุปเอกสาร
 
-## 12.1 สร้างโฟลเดอร์
+## 13.1 สร้าง folder งาน
 
 ```bash
+# สร้าง folder สำหรับ input/output/archive
 mkdir -p "$HOME/AI-Agent-Lab/input"
 mkdir -p "$HOME/AI-Agent-Lab/output"
 mkdir -p "$HOME/AI-Agent-Lab/archive"
 ```
 
-## 12.2 อ่านไฟล์ text
+## 13.2 อ่านไฟล์แบบจำกัด scope
 
 ```bash
-cat "$HOME/AI-Agent-Lab/input/sample.txt"
-```
-
-อ่านเฉพาะต้นไฟล์:
-
-```bash
+# อ่านเฉพาะต้นไฟล์ ไม่อ่านทั้งไฟล์ยาวโดยไม่จำเป็น
 head -80 "$HOME/AI-Agent-Lab/input/sample.txt"
 ```
 
-## 12.3 เขียนไฟล์ Markdown
+## 13.3 เขียน Markdown output
 
 ```bash
+# สร้างไฟล์ Markdown output
 cat <<'EOF' > "$HOME/AI-Agent-Lab/output/summary.md"
 # Summary
 
-This is a sample summary generated by OpenClaw.
+This is a sample summary generated through a controlled OpenClaw workflow.
 EOF
 ```
 
-## 12.4 Append ไม่เขียนทับ
+## 13.4 Backup ก่อนแก้ไฟล์
 
 ```bash
-cat <<'EOF' >> "$HOME/AI-Agent-Lab/output/summary.md"
-
-## Additional Notes
-- New item added.
-EOF
-```
-
-## 12.5 Backup ก่อนแก้ไฟล์
-
-```bash
+# backup ก่อนแก้ไขไฟล์สำคัญ
 cp "$HOME/AI-Agent-Lab/output/summary.md" \
    "$HOME/AI-Agent-Lab/output/summary.backup.$(date +%Y%m%d-%H%M%S).md"
 ```
 
----
-
-# บทที่ 13: Cron Automation พื้นฐาน
-
-## 13.1 Cron คืออะไร
-
-Cron คือระบบตั้งเวลารันงานอัตโนมัติ เช่น
+## 13.5 หลัก chunking
 
 ```text
-ทุกวัน 08:00 ส่งข่าวสรุป
+ถ้าไฟล์ยาว ให้แบ่งเป็นส่วนย่อย
+สรุปทีละส่วน
+บันทึก finding/source basis
+ค่อยทำ synthesis ตอนท้าย
+```
+
+---
+
+# บทที่ 14: Cron Automation แบบ Cost-safe
+
+## 14.1 Cron คืออะไร
+
+Cron คือระบบตั้งเวลารันงานอัตโนมัติ เช่น:
+
+```text
+ทุกวัน 08:00 ส่งสรุปข่าว
 ทุกวันศุกร์ 17:00 สรุปงานประจำสัปดาห์
 ทุกเดือนวันที่ 1 สร้างรายงานค่าใช้จ่าย
 ```
 
-## 13.2 คำสั่งดู cron
+## 14.2 Preflight ก่อนเปิด cron
 
 ```bash
-openclaw cron list
+# ตรวจ provider/model/gateway ก่อนเปิด cron
+openclaw models auth list --provider openai
+openclaw models list --provider openai
+openclaw models status --probe
+openclaw gateway status
 ```
 
-## 13.3 สร้าง cron ตัวอย่าง: Daily News Brief
+## 14.3 สร้าง prompt variable
 
 ```bash
+# เก็บ prompt ในตัวแปร MSG เพื่อให้อ่านง่ายและแก้ไขง่าย
 MSG=$(cat <<'EOF'
-ทำ Daily News Brief แบบสั้น
+Create a lightweight daily brief.
 
-ค้นข่าวทั่วไปที่สำคัญใน 24 ชั่วโมงล่าสุด
-จำกัดไม่เกิน 3 ข่าว
-สรุปเป็นภาษาไทย
-ข่าวละไม่เกิน 4 บรรทัด
-ท้ายข้อความให้ระบุว่า “ต้องการรายละเอียดข่าวใดเพิ่มเติมหรือไม่”
+Scope:
+- Use only important items.
+- Limit the result to three items.
+- Keep the response under 500 words.
+- Do not read full PDFs.
+- If information is insufficient, say so clearly.
+
+Controls:
+- Do not include secrets, tokens, or private data.
+- Do not expand the scope beyond the requested brief.
+- Use sources only when available.
+
+Output format:
+1) Overall status
+2) Key items
+3) Short impact notes
+4) Sources, if available
 EOF
 )
+```
 
+## 14.4 เพิ่ม cron job
+
+```bash
+# ใช้ model ที่ตรวจแล้วว่าเหมาะกับงาน recurring/cost-sensitive
 openclaw cron add \
-  --name "daily-general-news-brief" \
+  --name "daily-lightweight-brief" \
   --cron "0 8 * * *" \
   --tz "Asia/Bangkok" \
   --session isolated \
-  --announce \
-  --channel telegram \
-  --to "<telegram-chat-id>" \
-  --model openai/gpt-5.4-nano \
+  --model "openai/<verified-economy-model-id>" \
   --message "$MSG"
 ```
 
-## 13.4 Run test
+## 14.5 ตรวจ cron
 
 ```bash
+# ดูรายการ cron job ทั้งหมด
 openclaw cron list
+
+# ทดสอบ run เฉพาะ job
 openclaw cron run "<job-id>"
+
+# ดูประวัติการ run
 openclaw cron runs --id "<job-id>"
 ```
 
-## 13.5 Disable / Enable
+## 14.6 Disable / Enable
 
 ```bash
+# ปิด job ที่มีปัญหาก่อนแก้ไข
 openclaw cron disable "<job-id>"
+
+# เปิดใช้งานเมื่อแก้ไขแล้ว
 openclaw cron enable "<job-id>"
 ```
 
 ---
 
-# บทที่ 14: ตัวอย่าง Automation ทั่วไป
+# บทที่ 15: ตัวอย่าง Automation ตาม Use Case
 
-## 14.1 Daily Personal Brief
+## 15.1 Daily Personal Brief
 
 ```text
 ทุกวัน 07:00
 ส่งสรุป:
-- สภาพอากาศโดยย่อ
-- ข่าวสำคัญ 3 เรื่อง
+- ข่าวสำคัญไม่เกิน 3 เรื่อง
 - งานที่ควรทำวันนี้
-- คำแนะนำสั้น ๆ
+- ความเสี่ยง/ข้อควรติดตาม
+- source ถ้ามี
 ```
 
-Model แนะนำ:
+Model strategy:
 
 ```text
-openai/gpt-5.4-nano
+Luna/Terra หรือ <verified-economy-model-id>
 ```
 
-## 14.2 Weekly Project Summary
+## 15.2 Weekly Project Summary
 
 ```text
 ทุกวันศุกร์ 17:00
-อ่านบันทึกในโฟลเดอร์ project-notes
+อ่าน notes ที่กำหนดไว้เท่านั้น
 สรุป:
 1) งานที่เสร็จแล้ว
 2) งานที่ยังค้าง
@@ -634,32 +762,43 @@ openai/gpt-5.4-nano
 4) แผนสัปดาห์ถัดไป
 ```
 
-Model แนะนำ:
+Model strategy:
 
 ```text
-openai/gpt-5.4-mini
+Terra หรือ <verified-balanced-model-id>
 ```
 
-## 14.3 Monthly Expense Summary
+## 15.3 Legal / Audit-style Review
 
 ```text
-ทุกวันที่ 1 เวลา 09:00
-อ่านไฟล์ CSV ค่าใช้จ่าย
-สรุปยอดรวม แยกหมวดหมู่ และข้อสังเกต
-เขียนผลเป็น Markdown และ CSV
+สรุป finding หรือ issue โดยต้อง preserve source basis
+แยก:
+1) Facts from source
+2) Analysis
+3) Risk
+4) Recommended action
+5) Evidence to request
 ```
 
-Model แนะนำ:
+Model strategy:
 
 ```text
-openai/gpt-5.4-mini
+Sol/Terra หรือ <verified-reasoning-model-id>
 ```
 
-## 14.4 Customer Feedback Classifier
+Control:
+
+```text
+ห้ามสรุปเกิน source
+ต้องระบุข้อจำกัดเมื่อ source ไม่พอ
+ต้องมี human review ก่อนใช้จริง
+```
+
+## 15.4 Customer Feedback Classifier
 
 ```text
 ทุกวัน 18:00
-อ่าน feedback ใหม่
+อ่าน feedback ใหม่เฉพาะไฟล์ที่กำหนด
 จัดหมวดเป็น:
 - Complaint
 - Feature Request
@@ -669,74 +808,60 @@ openai/gpt-5.4-mini
 บันทึกเป็น CSV
 ```
 
-Model แนะนำ:
+Model strategy:
 
 ```text
-openai/gpt-5.4-nano
-```
-
-## 14.5 Study Assistant
-
-```text
-ทุกคืน 20:00
-ส่งคำถามทบทวน 5 ข้อจากบทเรียนล่าสุด
-ไม่เฉลยทันที
-ให้ผู้เรียนตอบก่อน
-```
-
-Model แนะนำ:
-
-```text
-openai/gpt-5.4-nano
+Luna หรือ <verified-economy-model-id>
 ```
 
 ---
 
-# บทที่ 15: การควบคุมค่าใช้จ่าย
+# บทที่ 16: Cost Control
 
-## 15.1 หลักคิด
+## 16.1 หลักคิด
 
-ค่าใช้จ่ายขึ้นกับ:
+ต้นทุนขึ้นกับ:
 
 ```text
-input tokens + output tokens + tool usage + จำนวนครั้งที่เรียก model
+input tokens + output tokens + model tier + tool calls + frequency + retries
 ```
 
-## 15.2 ใช้ model ให้เหมาะกับงาน
-
-| งาน | ใช้ model |
-|---|---|
-| งานสั้น / classification | nano |
-| งานทั่วไป | mini |
-| งานยาว / วิเคราะห์ | mini หรือรุ่นใหญ่ตามความจำเป็น |
-
-## 15.3 ลด token ด้วยวิธีง่าย ๆ
+## 16.2 Policy สั้น ๆ
 
 ```text
-- จำกัดจำนวนรายการผลลัพธ์
-- จำกัดจำนวนคำ
-- อย่าให้ model อ่านไฟล์ยาวทั้งฉบับ
-- แยกงานใหญ่เป็นหลายขั้นตอน
-- ไม่ให้ cron ทำงานหนักเกินไป
+Pick the lowest-cost verified model tier that can still complete the task safely and accurately.
 ```
 
-## 15.4 ตัวอย่าง prompt ประหยัด token
+## 16.3 เลือก tier ตาม workload
+
+| Workload | Preferred tier | เหตุผล |
+|---|---|---|
+| One-off complex reasoning | Sol/Terra | ความถูกต้องสำคัญกว่าต้นทุน |
+| Routine professional writing | Terra | สมดุลคุณภาพและต้นทุน |
+| Daily brief / cron summary | Luna/Terra | งานรันซ้ำ ต้นทุนสะสมเร็ว |
+| Bulk classification | Luna | output สั้น ปริมาณมาก |
+| Code review / architecture | Sol/Terra | ต้อง reasoning และ verify |
+| Legal/audit analysis | Sol/Terra | source fidelity สำคัญ |
+
+## 16.4 วิธีลดต้นทุน
 
 ```text
-สรุปข้อความต่อไปนี้ไม่เกิน 150 คำ
-แสดงเฉพาะ:
-1) ใจความสำคัญ
-2) สิ่งที่ต้องทำต่อ
-ไม่ต้องอธิบายเพิ่ม
+จำกัด output
+จำกัดจำนวน source/query
+จำกัด tool calls
+chunk ไฟล์ใหญ่
+ใช้ isolated session สำหรับ cron
+หยุด workflow เมื่อ cost spike
+ตรวจ pricing/quota ก่อน production
 ```
 
 ---
 
-# บทที่ 16: Rate Limit และการแก้ปัญหา
+# บทที่ 17: Rate Limit และ Context Overflow
 
-## 16.1 Rate Limit คืออะไร
+## 17.1 Rate Limit
 
-Rate limit คือข้อจำกัดการใช้งาน API เช่น
+Rate limit คือข้อจำกัดของ provider เช่น:
 
 ```text
 RPM = requests per minute
@@ -745,81 +870,105 @@ RPD = requests per day
 TPD = tokens per day
 ```
 
-## 16.2 ตัวอย่าง error
+แนวทางแก้:
 
 ```text
-Rate limit reached for gpt-5.4-nano on tokens per min
-Please try again in 24s
-```
-
-## 16.3 วิธีแก้
-
-```text
-1) รอ 60–90 วินาที
-2) อย่ากด run ซ้ำ
+1) หยุด run ซ้ำทันที
+2) รอช่วงเวลาที่เหมาะสม
 3) ลด prompt/output
-4) ลดจำนวน tool call
-5) แยก cron ไม่ให้รันติดกัน
-6) ใช้ model ที่มี limit เหมาะกว่า
+4) ลด tool calls
+5) แยก cron ไม่ให้ชนกัน
+6) ตรวจ quota/billing/provider status
 ```
 
-## 16.4 คำสั่งที่ควรใช้
-
-```bash
-sleep 90
-openclaw cron list
-openclaw cron runs --id "<job-id>"
-```
-
----
-
-# บทที่ 17: Context Overflow และวิธีป้องกัน
-
-## 17.1 Context Overflow คืออะไร
+## 17.2 Context Overflow
 
 เกิดเมื่อข้อมูลรวมทั้งหมดใหญ่เกิน context ของ model:
 
 ```text
-prompt + chat history + tool input + output budget > context limit
+prompt + chat history + tool input + file content + output budget > context limit
 ```
 
-## 17.2 วิธีแก้ทันที
+แนวทางแก้:
 
 ```text
-- ใช้ /new ใน Telegram
-- ลด prompt
-- จำกัด output
-- ไม่เปิด PDF เต็ม
-- ไม่ค้นหลายเว็บพร้อมกัน
-- แยกงานเป็น Discovery → Analysis → Record
+ลด prompt
+เริ่ม session ใหม่
+chunk ไฟล์ใหญ่
+จำกัด output
+ไม่เปิด PDF/full text โดยไม่จำเป็น
+แยกงานเป็น Discovery → Analysis → Record
 ```
 
 ## 17.3 Micro-light Prompt Pattern
 
 ```text
 ค้นแบบเบามาก
-ใช้ web_search ไม่เกิน 1 ครั้ง
+ใช้ web search ไม่เกิน 1 ครั้ง
 รายงานไม่เกิน 2 รายการ
 ตอบไม่เกิน 350 คำ
-ห้ามใช้ตาราง
 ห้ามอ่าน PDF
-ถามก่อนวิเคราะห์ต่อ
+ถ้าข้อมูลไม่พอ ให้แจ้งข้อจำกัด
 ```
 
 ---
 
-# บทที่ 18: Telegram Channel
+# บทที่ 18: Troubleshooting
 
-## 18.1 ใช้ Telegram เพื่ออะไร
+## 18.1 First Checks
 
-```text
-- รับผลสรุปรายวัน
-- แจ้งเตือนงาน cron
-- สั่ง agent แบบสั้น
-- ตรวจสถานะระบบ
+```bash
+# ตรวจสุขภาพ OpenClaw เบื้องต้น
+openclaw doctor
+
+# ตรวจ gateway
+openclaw gateway status
+
+# ตรวจ auth/model
+openclaw models auth list --provider openai
+openclaw models list --provider openai
+openclaw models status --probe
 ```
 
-## 18.2 เริ่ม session ใหม่
+## 18.2 Error Table
+
+| Error / Symptom | สาเหตุที่เป็นไปได้ | วิธีแก้แรก |
+|---|---|---|
+| `401` | auth/API key ผิดหรือหมดอายุ | login provider ใหม่ / rotate key |
+| `402` | credit/billing ไม่พอ | ตรวจ billing / ลด token / ลด model tier |
+| `model not found` | route stale หรือ account ไม่มี model | run `models list` ใหม่ |
+| `rate limit` | เกิน RPM/TPM/quota | รอ / ลด prompt / ลด tool calls |
+| `context overflow` | prompt/history/file/tool ใหญ่เกิน | chunk / new session / ลด output |
+| `web_search disabled` | ยังไม่ได้ตั้ง web provider | configure web แล้ว restart |
+| cron output ยาวเกิน | prompt กว้างเกิน | เพิ่ม output budget |
+| tool scope กว้างเกิน | agent อ่าน/ค้นมากกว่าที่ควร | จำกัด tool/file/source scope |
+
+## 18.3 Logs
+
+```bash
+# ดู help ของ log command
+openclaw logs --help
+
+# ติดตาม log แบบต่อเนื่อง
+openclaw logs --follow
+```
+
+ก่อนแชร์ log ให้ sanitize ตาม [`docs/security.md`](docs/security.md)
+
+---
+
+# บทที่ 19: Telegram Channel
+
+## 19.1 ใช้ Telegram เพื่ออะไร
+
+```text
+รับผลสรุปรายวัน
+รับแจ้งเตือน cron
+สั่ง agent แบบสั้น
+ตรวจสถานะระบบ
+```
+
+## 19.2 เริ่ม session ใหม่
 
 ใน Telegram ส่ง:
 
@@ -830,97 +979,81 @@ prompt + chat history + tool input + output budget > context limit
 ใช้เมื่อ:
 
 ```text
-- agent ตอบไม่ออก
-- session ยาวมาก
-- context overflow
-- เปลี่ยน model แล้ว
-- เจอ Something went wrong
+session ยาวเกิน
+context overflow
+เปลี่ยน model แล้ว
+agent ตอบผิดปกติ
+งานใหม่ไม่เกี่ยวกับงานเดิม
 ```
 
-## 18.3 ข้อความทดสอบ
+## 19.3 Security สำหรับ Telegram
 
 ```text
-สวัสดี ตรวจสถานะสั้น ๆ ให้หน่อย
+ห้ามโพสต์ bot token
+ห้ามใส่ gateway token ใน chat
+อย่า forward raw logs ที่มี secret
+จำกัด channel/recipient สำหรับ cron notification
 ```
-
----
-
-# บทที่ 19: Logs และการ Debug
-
-## 19.1 ดู logs
-
-```bash
-openclaw logs --help
-openclaw logs --follow
-```
-
-ถ้าเวอร์ชันรองรับ:
-
-```bash
-openclaw logs --tail 200
-```
-
-## 19.2 ดู cron runs
-
-```bash
-openclaw cron runs --id "<job-id>"
-```
-
-## 19.3 วิธีอ่าน error เบื้องต้น
-
-| Error | สาเหตุ | วิธีแก้ |
-|---|---|---|
-| `401` | auth/API key ผิด | login provider ใหม่ |
-| `402` | credit ไม่พอ | เติม credit / ลด token |
-| `rate limit` | ใช้ TPM/RPM เกิน | รอ / ลด prompt |
-| `context overflow` | prompt/tool ใหญ่เกิน | ลดขนาดงาน |
-| `web_search disabled` | ยังไม่ตั้ง web provider | configure web |
-| `couldn't generate response` | model/tool/session error | ดู runs/logs เพิ่ม |
 
 ---
 
 # บทที่ 20: Security Best Practices
 
-## 20.1 ไม่เผยแพร่ secret
+## 20.1 Agent Threat Model
 
-```text
-API key
-Bot token
-Gateway token
-.env
-Auth profile
-Password
-```
+| Threat | Risk | Mitigation |
+|---|---|---|
+| Prompt injection | external content สั่ง agent ให้ ignore rules หรือ reveal data | treat external text as untrusted |
+| Credential leakage | key/token หลุดใน prompt/log/screenshot | mask/rotate ทันที |
+| Unsafe tool execution | agent ใช้ tool เกิน scope | limit tools per workflow |
+| Skill/plugin poisoning | template มี hidden malicious instruction | review template ก่อน reuse |
+| Over-broad file access | agent อ่านไฟล์ไม่เกี่ยวข้อง | ใช้ explicit path และ chunking |
+| Cron amplification | job ซ้ำทำให้ cost/error เพิ่ม | isolated session + strict budget |
+| Log exposure | logs มีข้อมูลส่วนบุคคลหรือ secrets | sanitize ก่อนแชร์ |
 
-## 20.2 ก่อนส่ง log ให้ตรวจ secret
-
-```bash
-grep -RniE "sk-|token|api[_-]?key|secret|password" "$HOME/.openclaw" --exclude-dir=node_modules
-```
-
-## 20.3 Backup ก่อนแก้ config
+## 20.2 Secret scan เบื้องต้น
 
 ```bash
-cp "$HOME/.openclaw/openclaw.json" \
-   "$HOME/.openclaw/openclaw.backup.$(date +%Y%m%d-%H%M%S).json"
+# ค้น pattern เสี่ยงใน folder OpenClaw local ก่อนแชร์ log/config
+ grep -RniE "sk-|token|api[_-]?key|secret|password" "$HOME/.openclaw" --exclude-dir=node_modules
+```
+
+## 20.3 Incident Note Template
+
+```markdown
+# Security Incident Note
+
+Date:
+Detected by:
+Affected workflow:
+Potential exposure:
+Immediate action taken:
+Credential rotation status:
+Repository/log cleanup status:
+Prevention measure:
+Owner:
 ```
 
 ---
 
 # บทที่ 21: Rollback Plan
 
-## 21.1 หา backup ล่าสุด
+## 21.1 Backup ก่อนแก้ config
 
 ```bash
-ls -lt "$HOME/.openclaw" | grep openclaw.backup
+# backup config ก่อนแก้ไข
+cp "$HOME/.openclaw/openclaw.json" \
+   "$HOME/.openclaw/openclaw.backup.$(date +%Y%m%d-%H%M%S).json"
 ```
 
 ## 21.2 Restore config
 
 ```bash
+# restore config จาก backup ที่เลือก
 cp "$HOME/.openclaw/openclaw.backup.YYYYMMDD-HHMMSS.json" \
    "$HOME/.openclaw/openclaw.json"
 
+# restart และ probe หลัง restore
 openclaw gateway restart
 openclaw models status --probe
 ```
@@ -928,6 +1061,7 @@ openclaw models status --probe
 ## 21.3 ปิด cron ที่ error ก่อน rollback
 
 ```bash
+# ปิด cron ที่ทำงานผิดพลาดก่อนแก้ config
 openclaw cron disable "<job-id>"
 ```
 
@@ -942,27 +1076,42 @@ openclaw cron disable "<job-id>"
 [ ] OpenClaw ติดตั้งแล้ว
 [ ] Gateway running
 [ ] Dashboard เปิดได้
-[ ] OpenAI API key login แล้ว
-[ ] GPT mini ตั้งเป็น primary
-[ ] GPT nano ตั้งเป็น fallback
+[ ] OpenAI provider login แล้ว
+[ ] Auth profile ตรวจแล้ว
+[ ] Model catalog ตรวจด้วย models list แล้ว
+[ ] Primary model ตั้งจาก verified route แล้ว
+[ ] Fallback model ตั้งอย่างตั้งใจแล้ว
 [ ] models status --probe ผ่าน
-[ ] Telegram ใช้งานได้
-[ ] Web search provider ตั้งค่าแล้ว
-[ ] Cron test ผ่าน
+[ ] Security checklist ผ่าน
+[ ] Web search provider ตั้งค่าแล้วเมื่อจำเป็น
+[ ] Cron test ผ่านเมื่อมี automation
 ```
 
-## 22.2 Troubleshooting Checklist
+## 22.2 GPT-5.6 Verification Checklist
+
+```text
+[ ] เห็น model route ใน openclaw models list --provider openai
+[ ] เลือก tier ตามงาน ไม่ใช่เลือก model ใหญ่เสมอ
+[ ] ไม่ hardcode ราคา/availability
+[ ] ตรวจ pricing/quota ก่อน production
+[ ] มี output budget
+[ ] มี tool-call budget
+[ ] มี fallback policy
+[ ] มี human review สำหรับงาน high-risk
+```
+
+## 22.3 Troubleshooting Checklist
 
 ```text
 [ ] ตรวจ gateway status
+[ ] ตรวจ auth list
+[ ] ตรวจ models list
 [ ] ตรวจ models status --probe
-[ ] ตรวจ cron list
-[ ] ตรวจ cron runs
-[ ] ตรวจ web_search
-[ ] ตรวจ Telegram target
-[ ] ตรวจ rate limit / credit
-[ ] ใช้ /new ถ้า session ค้าง
-[ ] disable job ที่ error ซ้ำ
+[ ] ตรวจ cron list/runs
+[ ] ตรวจ web provider
+[ ] ตรวจ rate limit / credit / quota
+[ ] ใช้ new session ถ้า context ค้าง
+[ ] disable cron ที่ error ซ้ำ
 [ ] backup ก่อนแก้ config
 ```
 
@@ -970,55 +1119,66 @@ openclaw cron disable "<job-id>"
 
 # บทที่ 23: แบบฝึกหัด
 
-## แบบฝึกหัดที่ 1: ตั้ง GPT Primary
+## แบบฝึกหัดที่ 1: ตรวจ catalog และเลือก primary
 
 ให้ผู้เรียนรัน:
 
 ```bash
-openclaw models set openai/gpt-5.4-mini
+openclaw models auth list --provider openai
+openclaw models list --provider openai
+```
+
+แล้วตอบ:
+
+```text
+1) พบ model route ใดบ้าง
+2) งานที่กำลังทำควรใช้ Sol, Terra หรือ Luna เพราะอะไร
+3) route ใดเหมาะเป็น primary
+4) route ใดเหมาะเป็น fallback
+```
+
+## แบบฝึกหัดที่ 2: ตั้ง primary/fallback แบบ verified route
+
+```bash
+openclaw models set "openai/<verified-primary-model-id>"
 openclaw models fallbacks clear
-openclaw models fallbacks add openai/gpt-5.4-nano
+openclaw models fallbacks add "openai/<verified-fallback-model-id>"
 openclaw gateway restart
 openclaw models status --probe
 ```
 
-แล้วตอบว่า:
+ให้บันทึก:
 
 ```text
-Default model คืออะไร
-Fallback คืออะไร
-Probe ผ่านหรือไม่
+Primary:
+Fallback:
+Probe result:
+Reason for tier selection:
 ```
 
-## แบบฝึกหัดที่ 2: สร้าง Daily Brief
+## แบบฝึกหัดที่ 3: สร้าง Daily Brief แบบ cost-safe
 
-ให้สร้าง cron ที่ส่งสรุปข่าวทั่วไปทุกวัน 08:00 โดยใช้ GPT nano
-
-## แบบฝึกหัดที่ 3: เขียนไฟล์ Markdown
-
-ให้สร้างไฟล์:
+ให้ผู้เรียนสร้าง cron ที่:
 
 ```text
-~/AI-Agent-Lab/output/daily-summary.md
-```
-
-และเขียนหัวข้อ:
-
-```text
-# Daily Summary
+รันทุกวัน 08:00
+ใช้ isolated session
+ใช้ <verified-economy-model-id>
+จำกัดไม่เกิน 3 รายการ
+ตอบไม่เกิน 500 คำ
+ไม่อ่าน PDF เต็มฉบับ
 ```
 
 ## แบบฝึกหัดที่ 4: วิเคราะห์ error
 
-ให้ผู้เรียนจับคู่ error กับวิธีแก้:
-
-| Error | วิธีแก้ |
+| Error | วิธีแก้ที่ควรตอบ |
 |---|---|
-| rate limit | รอ / ลด prompt |
-| context overflow | ลด context / ใช้ /new |
-| web_search disabled | configure web |
-| 401 | login provider ใหม่ |
-| unknown command restart | ใช้ gateway restart |
+| model not found | ตรวจ `openclaw models list --provider openai` |
+| rate limit | รอ / ลด prompt / ลด tool calls |
+| context overflow | chunk / new session / ลด output |
+| web_search disabled | configure web แล้ว restart |
+| 401 | login provider ใหม่ / rotate key |
+| cost spike | pause cron / ลด tier / ตรวจ pricing/quota |
 
 ---
 
@@ -1031,17 +1191,23 @@ openclaw gateway status
 openclaw gateway restart
 openclaw dashboard
 
+# Auth
+openclaw models auth login --provider openai
+openclaw models auth login --provider openai --method api-key
+openclaw models auth login --provider openai --device-code
+openclaw models auth list --provider openai
+
 # Models
 openclaw models list --provider openai
 openclaw models status
 openclaw models status --probe
-openclaw models set openai/gpt-5.4-mini
+openclaw models set "openai/<verified-primary-model-id>"
 openclaw models fallbacks clear
-openclaw models fallbacks add openai/gpt-5.4-nano
+openclaw models fallbacks add "openai/<verified-fallback-model-id>"
 openclaw models aliases list
-
-# Auth
-openclaw models auth login --provider openai
+openclaw models aliases add gpt-reasoning "openai/<verified-sol-or-terra-model-id>"
+openclaw models aliases add gpt-balanced "openai/<verified-terra-model-id>"
+openclaw models aliases add gpt-economy "openai/<verified-luna-or-terra-model-id>"
 
 # Cron
 openclaw cron list
@@ -1049,7 +1215,7 @@ openclaw cron run "<job-id>"
 openclaw cron runs --id "<job-id>"
 openclaw cron disable "<job-id>"
 openclaw cron enable "<job-id>"
-openclaw cron edit "<job-id>" --model openai/gpt-5.4-nano
+openclaw cron edit "<job-id>" --model "openai/<verified-economy-model-id>"
 
 # Web Search
 openclaw configure --section web
@@ -1072,28 +1238,25 @@ EOF
 
 # สรุปบทเรียน
 
-OpenClaw + OpenAI / GPT 5.x เหมาะสำหรับสร้าง AI Agent ที่ใช้งานจริงได้ในหลายบริบท เช่น สรุปข่าว สรุปเอกสาร จัดหมวดข้อมูล ทำรายงาน เขียนอีเมล ตั้ง reminder และสร้าง workflow อัตโนมัติ
+OpenClaw + OpenAI GPT-5.x / GPT-5.6 เหมาะสำหรับสร้าง AI Agent ที่ใช้งานจริงได้ในหลายบริบท เช่น สรุปข่าว สรุปเอกสาร จัดหมวดข้อมูล ทำรายงาน วิเคราะห์เชิงเหตุผล ตั้ง automation และสร้าง workflow ที่เชื่อมกับ tools ได้
 
-แนวทางที่แนะนำสำหรับผู้เริ่มต้นและงานทั่วไป:
+แนวทางใหม่ของ repo นี้ไม่ใช่การจำชื่อ model แต่คือ:
 
 ```text
-Primary   = GPT mini
-Fallback  = GPT nano
-Cron เบา  = GPT nano
-งานละเอียด = GPT mini
+Verify catalog → choose model tier → set primary → set fallback → restart gateway → probe → document result
 ```
 
-หลักสำคัญ:
+หลักสำคัญที่ต้องจำ:
 
 ```text
-ตรวจสถานะก่อนแก้
-backup ก่อนเปลี่ยน config
+ตรวจ catalog ก่อนตั้ง model
+ไม่ hardcode model ID/ราคา/availability
+ใช้ Sol/Terra/Luna ตามความเสี่ยงและปริมาณงาน
+จำกัด prompt/output/tool calls
+ใช้ isolated session สำหรับ cron
 ไม่เปิดเผย secret
-ใช้ model ให้เหมาะกับงาน
-จำกัด prompt/output
-ไม่รัน cron ซ้ำถี่
-ใช้ /new เมื่อ session ค้าง
+sanitize logs ก่อนแชร์
+ใช้ human review สำหรับงาน high-risk
 ```
 
 **End of Lesson**
-
