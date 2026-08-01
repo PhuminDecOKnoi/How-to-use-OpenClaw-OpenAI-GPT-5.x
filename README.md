@@ -7,7 +7,7 @@
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Security](https://img.shields.io/badge/security-first-critical)
 
-> คู่มือมาตรฐานสำหรับติดตั้ง กำหนดค่า ตรวจสอบสถานะ และใช้งาน **OpenClaw** ร่วมกับ **OpenAI GPT-5.x** เพื่อสร้าง AI Agent สำหรับ Dashboard, Telegram, Web Search, File Workflow และ Cron Automation อย่างเป็นระบบ ปลอดภัย และควบคุมต้นทุนได้
+> คู่มือมาตรฐานสำหรับติดตั้ง กำหนดค่า ตรวจสอบสถานะ และใช้งาน **OpenClaw** ร่วมกับ **OpenAI GPT-5.x / GPT-5.6** เพื่อสร้าง AI Agent สำหรับ Dashboard, Telegram, Web Search, File Workflow และ Cron Automation อย่างเป็นระบบ ปลอดภัย และควบคุมต้นทุนได้
 
 ---
 
@@ -19,6 +19,7 @@
 - [Core Use Cases](#core-use-cases)
 - [Architecture](#architecture)
 - [Quick Start](#quick-start)
+- [GPT-5.6 Operating Standard](#gpt-56-operating-standard)
 - [Documentation Map](#documentation-map)
 - [Operating Standards](#operating-standards)
 - [Security Baseline](#security-baseline)
@@ -33,13 +34,14 @@
 
 **OpenClaw** ทำหน้าที่เป็น AI-agent gateway ระหว่างผู้ใช้ ช่องทางสื่อสาร เครื่องมือภายนอก และ model provider เช่น OpenAI โดย repository นี้จัดทำขึ้นเป็น **practical operating guide** สำหรับผู้ใช้ที่ต้องการนำ OpenClaw ไปใช้งานจริงหรือใช้สอนใน workshop
 
-แนวทางของ repository นี้เน้น 5 เรื่องหลัก:
+แนวทางของ repository นี้เน้น 6 เรื่องหลัก:
 
 1. ติดตั้งและตรวจสอบ OpenClaw ให้พร้อมใช้งาน
 2. เชื่อม OpenAI provider อย่างปลอดภัย
 3. กำหนด model, fallback, alias และ gateway อย่างเป็นระบบ
 4. ใช้งาน Dashboard, Telegram, Web Search, File Workflow และ Cron Automation
 5. ควบคุม API key, token, cost, rate limit และ context overflow
+6. ใช้มาตรฐาน GPT-5.6 แบบ verification-first ไม่ hardcode รุ่นหรือราคาโดยไม่ตรวจสอบ
 
 ---
 
@@ -57,9 +59,12 @@
 │   ├── architecture.md
 │   ├── installation.md
 │   ├── model-configuration.md
+│   ├── openai-gpt56-operating-standard.md
+│   ├── cost-control.md
 │   ├── security.md
 │   ├── troubleshooting.md
-│   └── cron-automation.md
+│   ├── cron-automation.md
+│   └── external-research-july-2026.md
 ├── examples/
 │   ├── config/
 │   │   └── .env.example
@@ -74,6 +79,9 @@
 | `README.md` | หน้าแรกของ repository และแผนที่การใช้งานทั้งหมด |
 | `assets/` | ภาพประกอบและ workflow diagram ที่ต้องการ render คงที่บน GitHub |
 | `docs/` | เอกสารปฏิบัติการแยกตามหัวข้อ เพื่อให้อ่านง่ายและ maintain ได้ |
+| `docs/openai-gpt56-operating-standard.md` | มาตรฐานใช้งาน OpenClaw + OpenAI GPT-5.6 แบบ verification-first |
+| `docs/cost-control.md` | แนวทางควบคุมต้นทุน model, tool calls, cron และ file workflows |
+| `docs/external-research-july-2026.md` | บันทึกแหล่งข้อมูลภายนอกที่ใช้ปรับมาตรฐาน July 2026 |
 | `examples/config/.env.example` | ตัวอย่าง environment variables แบบไม่มี secret จริง |
 | `examples/prompts/` | ตัวอย่าง prompt สำหรับงานสอน งานทดลอง และ automation |
 | `.github/PULL_REQUEST_TEMPLATE.md` | Template ตรวจคุณภาพก่อน merge |
@@ -98,12 +106,14 @@
 
 | Use Case | Description | Recommended Control |
 |---|---|---|
-| Daily Brief | สรุปข่าวหรือข้อมูลรายวัน | จำกัดจำนวนแหล่งข้อมูลและความยาวคำตอบ |
+| Daily Brief | สรุปข่าวหรือข้อมูลรายวัน | ใช้ model tier ที่คุมต้นทุน, จำกัด source และ output |
 | Document Summary | สรุปไฟล์หรือเอกสาร | แบ่งไฟล์เป็นส่วนย่อยก่อนประมวลผล |
 | Classification | จัดหมวดข้อมูลหรือเงื่อนไข | ใช้ prompt ที่มี output format ชัดเจน |
-| Web Search Agent | ค้นข้อมูลล่าสุดและสรุปพร้อมแหล่งอ้างอิง | เปิด web provider และตรวจ source ทุกครั้ง |
-| Cron Automation | ตั้งงานอัตโนมัติรายวัน/รายสัปดาห์ | ใช้ session แยกและจำกัด output |
+| Web Search Agent | ค้นข้อมูลล่าสุดและสรุปพร้อมแหล่งอ้างอิง | เปิด web provider, จำกัด query, ตรวจ source ทุกครั้ง |
+| Cron Automation | ตั้งงานอัตโนมัติรายวัน/รายสัปดาห์ | ใช้ isolated session, output budget และ verified model route |
 | Telegram Agent | สนทนากับ agent ผ่าน Telegram | ป้องกัน token และ reset session เมื่อ context ใหญ่เกินไป |
+| Legal / Audit-style Analysis | วิเคราะห์ที่ต้องใช้เหตุผลและอ้างอิง source | ใช้ model tier ที่เหมาะกับ reasoning และห้ามละเลย source basis |
+| Coding / Review | ช่วย coding, refactor, review, debug | ใช้ model ที่เหมาะกับ reasoning และต้องมี verification/test step |
 
 ---
 
@@ -147,16 +157,38 @@ openclaw dashboard
 
 ---
 
+## GPT-5.6 Operating Standard
+
+มาตรฐานใหม่ของ repository นี้คือ **verification-first GPT-5.6 workflow**:
+
+```text
+Verify catalog → choose model tier → set primary → set fallback → restart gateway → probe → document result
+```
+
+| Tier strategy | Use for | Read more |
+|---|---|---|
+| Sol / high reasoning | งานวิเคราะห์ลึก, coding, audit-style reasoning | [`docs/openai-gpt56-operating-standard.md`](docs/openai-gpt56-operating-standard.md) |
+| Terra / balanced | งานเอกสาร งานสอน งาน professional ทั่วไป | [`docs/model-configuration.md`](docs/model-configuration.md) |
+| Luna / cost-sensitive | งานสั้น งาน cron งาน classification ปริมาณมาก | [`docs/cost-control.md`](docs/cost-control.md) |
+| Security baseline | tool access, prompt injection, secret leakage | [`docs/security.md`](docs/security.md) |
+
+> Pricing and availability can change. Always verify provider catalog, account access, quota, and current pricing before production use.
+
+---
+
 ## Documentation Map
 
 | Document | Description |
 |---|---|
 | [`docs/architecture.md`](docs/architecture.md) | อธิบายภาพรวม gateway, provider, session, tools และ output flow |
 | [`docs/installation.md`](docs/installation.md) | ขั้นตอนติดตั้ง ตรวจสอบ และเปิด Dashboard |
-| [`docs/model-configuration.md`](docs/model-configuration.md) | แนวทางตั้งค่า OpenAI provider, model, fallback และ alias |
-| [`docs/security.md`](docs/security.md) | API key, token hygiene, secret handling และ log sanitization |
+| [`docs/model-configuration.md`](docs/model-configuration.md) | แนวทางตั้งค่า OpenAI provider, GPT-5.6 route, model, fallback และ alias |
+| [`docs/openai-gpt56-operating-standard.md`](docs/openai-gpt56-operating-standard.md) | มาตรฐานปฏิบัติ OpenClaw + OpenAI GPT-5.6 จากข้อมูลภายนอก July 2026 |
+| [`docs/cost-control.md`](docs/cost-control.md) | แนวทางควบคุมต้นทุน model tier, output budget, tool calls และ cron |
+| [`docs/security.md`](docs/security.md) | API key, token hygiene, agent threat model, tool permissions และ log sanitization |
 | [`docs/troubleshooting.md`](docs/troubleshooting.md) | อาการผิดพลาดที่พบบ่อยและวิธีตรวจทีละขั้น |
 | [`docs/cron-automation.md`](docs/cron-automation.md) | แนวทางออกแบบ scheduled job แบบ cost-safe |
+| [`docs/external-research-july-2026.md`](docs/external-research-july-2026.md) | บันทึกแหล่งข้อมูลภายนอกและเหตุผลการปรับมาตรฐาน |
 | [`examples/prompts/daily-brief.md`](examples/prompts/daily-brief.md) | prompt ตัวอย่างสำหรับ daily brief |
 | [`examples/config/.env.example`](examples/config/.env.example) | environment variable template แบบไม่มีข้อมูลลับ |
 
@@ -230,7 +262,9 @@ openclaw logs --follow
 - [ ] Add a brand/title banner for README
 - [ ] Add workshop slide outline
 - [ ] Add hands-on lab worksheet
-- [ ] Add model-selection checklist
+- [x] Add model-selection checklist
+- [x] Add GPT-5.6 operating standard
+- [x] Add cost-control guide
 - [ ] Add Thai/English glossary for AI-agent operations
 - [ ] Add example workflows for Telegram, Web Search, File Summary, and Cron
 
