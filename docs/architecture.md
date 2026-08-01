@@ -6,22 +6,44 @@
 
 ## System Flow
 
+> Workflow tone: **Dark** โดยใช้ทั้ง Mermaid theme configuration และ dark canvas/subgraph เพื่อให้พื้นหลังของภาพเป็นโทนเข้มชัดเจน ไม่ใช่เฉพาะสีของ node และเส้นเชื่อม
+
+> หมายเหตุ: GitHub อาจควบคุมพื้นหลังรอบนอกของ Markdown ตาม theme ของผู้ใช้งาน แต่ในตัว workflow จะมี dark canvas ครอบ diagram เพื่อให้ภาพหลักยังคงเป็นโทนเข้ม
+
 ```mermaid
+%%{init: {"theme": "base", "themeVariables": {"darkMode": true, "background": "#0d1117", "mainBkg": "#0d1117", "secondBkg": "#161b22", "primaryColor": "#161b22", "primaryTextColor": "#f0f6fc", "primaryBorderColor": "#58a6ff", "lineColor": "#8b949e", "secondaryColor": "#1f6feb", "tertiaryColor": "#21262d", "clusterBkg": "#0d1117", "clusterBorder": "#30363d", "edgeLabelBackground": "#161b22", "fontFamily": "Inter, Arial, sans-serif"}}}%%
 flowchart TD
-    U[User / Trainer / Operator] --> C[Channel: Dashboard / Telegram / CLI]
-    C --> G[OpenClaw Gateway]
-    G --> S[Agent Session]
-    S --> M[OpenAI GPT-5.x Provider]
-    S --> T[Tools Layer]
-    T --> W[Web Search]
-    T --> F[Files]
-    T --> CR[Cron]
-    T --> L[Logs]
-    M --> O[Output]
-    W --> O
-    F --> O
-    CR --> O
-    L --> O
+    subgraph CANVAS[OpenClaw + OpenAI GPT-5.x Dark Workflow]
+        direction TD
+        U[User / Trainer / Operator] --> C[Channel Layer<br/>Dashboard / Telegram / CLI]
+        C --> G[OpenClaw Gateway]
+        G --> S[Agent Session]
+        S --> M[OpenAI GPT-5.x Provider]
+        S --> T[Tools Layer]
+        T --> W[Web Search]
+        T --> F[Files]
+        T --> CR[Cron Automation]
+        T --> L[Logs]
+        M --> O[Output<br/>Summary / Report / Action]
+        W --> O
+        F --> O
+        CR --> O
+        L --> O
+    end
+
+    classDef userLayer fill:#161b22,stroke:#58a6ff,color:#f0f6fc,stroke-width:2px;
+    classDef gatewayLayer fill:#1f2937,stroke:#7c3aed,color:#f9fafb,stroke-width:2px;
+    classDef modelLayer fill:#172554,stroke:#38bdf8,color:#f8fafc,stroke-width:2px;
+    classDef toolsLayer fill:#14532d,stroke:#34d399,color:#f0fdf4,stroke-width:2px;
+    classDef outputLayer fill:#3b0764,stroke:#c084fc,color:#faf5ff,stroke-width:2px;
+
+    class U,C userLayer;
+    class G,S gatewayLayer;
+    class M modelLayer;
+    class T,W,F,CR,L toolsLayer;
+    class O outputLayer;
+
+    style CANVAS fill:#0d1117,stroke:#30363d,stroke-width:2px,color:#f0f6fc;
 ```
 
 ---
