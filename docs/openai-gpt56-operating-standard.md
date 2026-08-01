@@ -8,30 +8,38 @@
 
 Reviewed date: `2026-08-01`  
 Research window: `July 2026`  
-Primary sources:
+Source registry: [`docs/references.md`](references.md)
 
-- OpenClaw OpenAI provider documentation: `https://docs.openclaw.ai/providers/openai`
-- OpenClaw model providers documentation: `https://docs.openclaw.ai/concepts/model-providers`
-- OpenClaw models CLI documentation: `https://docs.openclaw.ai/cli/models`
-- OpenAI GPT-5.6 announcement: `https://openai.com/index/gpt-5-6/`
-- OpenAI Help Center preview note: `https://help.openai.com/en/articles/20001325-a-preview-of-gpt-56-sol-terra-and-luna`
+Primary source families:
 
-> Treat this document as an operating guide, not as a permanent source of pricing or model availability. Always verify model catalog and pricing before production use.
+- OpenClaw OpenAI provider documentation: [OC-OPENAI]
+- OpenClaw Models CLI documentation: [OC-MODELS]
+- OpenClaw model providers documentation: [OC-PROVIDERS]
+- OpenAI GPT-5.6 announcement: [OA-GPT56]
+- OpenAI Help Center GPT-5.6 preview note: [OA-GPT56-HELP]
+- July 30, 2026 pricing-change reporting: [NEWS-REUTERS]
+- Agent security research for OpenClaw-style tool agents: [SEC-PRISM]
+
+> Treat this document as an operating guide, not as a permanent source of pricing or model availability. Always verify model catalog, account access, quota, and pricing before production use. [OC-MODELS] [NEWS-REUTERS]
 
 ---
 
 ## Core Rule
 
 ```text
-Do not hardcode GPT-5.x model IDs, pricing, or access assumptions without checking the live OpenClaw/OpenAI catalog first.
+Do not hardcode GPT-5.x model IDs, pricing, quota, or access assumptions without checking the live OpenClaw/OpenAI catalog first.
 ```
 
-Use OpenClaw CLI verification before setting production defaults:
+Use OpenClaw CLI verification before setting production defaults. The `models` CLI is the supported place to inspect auth profiles, model lists, model status, fallbacks, and aliases. [OC-MODELS]
 
 ```bash
-# ตรวจ provider และ model catalog ที่บัญชีนี้ใช้งานได้จริง
+# ตรวจ provider auth profile ของ OpenAI
 openclaw models auth list --provider openai
+
+# ตรวจ model catalog ที่บัญชีนี้เห็นจริง
 openclaw models list --provider openai
+
+# ตรวจสถานะ model และ probe ก่อนใช้งานจริง
 openclaw models status --probe
 ```
 
@@ -39,7 +47,7 @@ openclaw models status --probe
 
 ## Provider Route Standard
 
-OpenClaw uses the OpenAI provider namespace:
+OpenClaw uses the OpenAI provider namespace `openai/*` for OpenAI model references. This route pattern is documented by the OpenClaw OpenAI provider and model-provider documentation. [OC-OPENAI] [OC-PROVIDERS]
 
 ```text
 openai/*
@@ -47,24 +55,26 @@ openai/*
 
 Recommended operating pattern:
 
-| Purpose | Model reference pattern | Rule |
-|---|---|---|
-| Direct OpenAI API usage | `openai/<model-id>` | Use API-key auth and verify available models first |
-| GPT-5.6 default route | `openai/gpt-5.6` | Verify whether this resolves to the expected tier for the current account/runtime |
-| GPT-5.6 Sol route | `openai/gpt-5.6-sol` | Use for complex reasoning only after catalog verification |
-| GPT-5.6 Terra route | `openai/gpt-5.6-terra` | Use only if present in `openclaw models list --provider openai` |
-| GPT-5.6 Luna route | `openai/gpt-5.6-luna` | Use only if present in `openclaw models list --provider openai` |
-| Fallback route | `openai/<fallback-model-id>` | Use a deliberately selected fallback, not an accidental downgrade |
+| Purpose | Model reference pattern | Rule | Source |
+|---|---|---|---|
+| Direct OpenAI API usage | `openai/<model-id>` | Use API-key auth and verify available models first | [OC-OPENAI] |
+| GPT-5.6 default route | `openai/gpt-5.6` | Verify whether this resolves to the expected tier for the current account/runtime | [OC-PROVIDERS] |
+| GPT-5.6 Sol route | `openai/gpt-5.6-sol` | Use for complex reasoning only after catalog verification | [OA-GPT56] |
+| GPT-5.6 Terra route | `openai/gpt-5.6-terra` | Use only if present in `openclaw models list --provider openai` | [OA-GPT56] [OC-MODELS] |
+| GPT-5.6 Luna route | `openai/gpt-5.6-luna` | Use only if present in `openclaw models list --provider openai` | [OA-GPT56] [OC-MODELS] |
+| Fallback route | `openai/<fallback-model-id>` | Use a deliberately selected fallback, not an accidental downgrade | [OC-MODELS] |
 
 ---
 
 ## Authentication Patterns
 
-| Pattern | Recommended for | Notes |
-|---|---|---|
-| API-key auth | Server, automation, API billing, CI-like workflows | Store key outside repository; never commit real `.env` |
-| OpenAI/Codex OAuth auth | Subscription-oriented usage and Codex-style runtime | Use named profiles where possible |
-| Device-code auth | Headless machines, remote terminal, workshop setup | Useful when browser login is not available |
+OpenClaw documents OpenAI provider auth through the `openai` provider ID and Models CLI auth commands. [OC-OPENAI] [OC-MODELS]
+
+| Pattern | Recommended for | Notes | Source |
+|---|---|---|---|
+| API-key auth | Server, automation, API billing, CI-like workflows | Store key outside repository; never commit real `.env` | [OC-OPENAI] |
+| OpenAI/Codex OAuth auth | Subscription-oriented usage and Codex-style runtime | Use named profiles where possible | [OC-OPENAI] |
+| Device-code auth | Headless machines, remote terminal, workshop setup | Useful when browser login is not available | [OC-MODELS] |
 
 Example commands:
 
@@ -86,13 +96,15 @@ openclaw models auth login --provider openai --profile-id training-demo
 
 ## Model Tier Strategy
 
-| Tier | Practical use | Avoid using for |
-|---|---|---|
-| GPT-5.6 Sol | Deep reasoning, coding, legal/audit-style analysis, complex agents | High-volume cron jobs or routine summaries when cost matters |
-| GPT-5.6 Terra | Balanced documentation, teaching, analysis, general professional tasks | Tasks that require maximum reasoning or ultra-low-cost high-volume work |
-| GPT-5.6 Luna | Lightweight summaries, classification, bulk routine tasks, cron | High-stakes reasoning, complex code repair, long-context legal/audit analysis |
+OpenAI describes GPT-5.6 as a model family with Sol, Terra, and Luna access through supported OpenAI surfaces, subject to approval and rollout. [OA-GPT56] [OA-GPT56-HELP]
 
-> The exact model route and tier availability may differ by account, auth method, region, runtime policy, and OpenAI rollout status. Verify before use.
+| Tier | Practical use | Avoid using for | Source |
+|---|---|---|---|
+| GPT-5.6 Sol | Deep reasoning, coding, legal/audit-style analysis, complex agents | High-volume cron jobs or routine summaries when cost matters | [OA-GPT56] |
+| GPT-5.6 Terra | Balanced documentation, teaching, analysis, general professional tasks | Tasks that require maximum reasoning or ultra-low-cost high-volume work | [OA-GPT56] |
+| GPT-5.6 Luna | Lightweight summaries, classification, bulk routine tasks, cron | High-stakes reasoning, complex code repair, long-context legal/audit analysis | [OA-GPT56] |
+
+> The exact model route and tier availability may differ by account, auth method, region, runtime policy, and OpenAI rollout status. Verify before use. [OA-GPT56-HELP] [OC-MODELS]
 
 ---
 
@@ -107,6 +119,8 @@ openclaw models auth login --provider openai --profile-id training-demo
 | Legal/audit-style analysis | Sol | Terra only for lower-risk drafts | Require citations and preserve source basis |
 | Cron automation | Luna or Terra | Disable fallback for risky jobs | Use isolated session and strict output budget |
 | Web-search agent | Terra | Luna for light discovery | Require source list and recency check |
+
+The cost-sensitive recommendations above are strategy guidance. They must be checked against current model availability and pricing before production. [OC-MODELS] [NEWS-REUTERS]
 
 ---
 
@@ -130,15 +144,20 @@ openclaw gateway restart
 openclaw models status --probe
 ```
 
+The commands above are based on OpenClaw Models CLI patterns for listing, setting, probing, aliases, and fallbacks. [OC-MODELS]
+
 ---
 
 ## Alias Standard
 
-Use aliases to make workshops and documentation easier to follow:
+Use aliases to make workshops and documentation easier to follow. Alias handling belongs to the OpenClaw Models CLI. [OC-MODELS]
 
 ```bash
 # Alias สำหรับงาน reasoning หนัก
 openclaw models aliases add gpt-reasoning "openai/<verified-sol-or-terra-model-id>"
+
+# Alias สำหรับงานสมดุลคุณภาพ/ต้นทุน
+openclaw models aliases add gpt-balanced "openai/<verified-terra-model-id>"
 
 # Alias สำหรับงาน daily/cron ที่ต้องคุมต้นทุน
 openclaw models aliases add gpt-economy "openai/<verified-luna-or-terra-model-id>"
@@ -153,39 +172,38 @@ openclaw models aliases list
 
 Before using GPT-5.x in OpenClaw production workflows, confirm:
 
-- [ ] Model is visible in `openclaw models list --provider openai`
-- [ ] Auth profile is correct for the intended account
-- [ ] No real API key or token is stored in the repository
-- [ ] Fallback model is explicitly selected
-- [ ] Cron jobs use isolated sessions
-- [ ] Prompt/output budgets are defined
+- [ ] Model is visible in `openclaw models list --provider openai` [OC-MODELS]
+- [ ] Auth profile is correct for the intended account [OC-MODELS]
+- [ ] No real API key or token is stored in the repository [OC-OPENAI]
+- [ ] Fallback model is explicitly selected [OC-MODELS]
+- [ ] Cron jobs use isolated sessions and output budgets [NEWS-REUTERS]
+- [ ] Prompt/output budgets are defined [NEWS-REUTERS]
 - [ ] File workflows use chunking for large files
 - [ ] Web-search workflows require sources
-- [ ] Logs are sanitized before sharing
-- [ ] Pricing and quota have been checked on the provider side
+- [ ] Logs are sanitized before sharing [SEC-PRISM]
+- [ ] Pricing and quota have been checked on the provider side [NEWS-REUTERS]
 
 ---
 
 ## Failure Handling
 
-| Symptom | First action | Follow-up |
-|---|---|---|
-| Model not found | Run `openclaw models list --provider openai` | Replace stale model ID |
-| Auth failure | Run `openclaw models auth list --provider openai` | Re-login or rotate API key |
-| Unexpected runtime | Check provider/model runtime policy | Pin runtime only when needed |
-| Cost spike | Stop cron/web jobs first | Reduce model tier, output budget, and tool calls |
-| Poor answer quality | Check prompt, source basis, and model tier | Upgrade model or narrow scope |
-| Context overflow | Start new isolated session | Split files/tasks into smaller batches |
+| Symptom | First action | Follow-up | Source |
+|---|---|---|---|
+| Model not found | Run `openclaw models list --provider openai` | Replace stale model ID | [OC-MODELS] |
+| Auth failure | Run `openclaw models auth list --provider openai` | Re-login or rotate API key | [OC-MODELS] |
+| Unexpected runtime | Check provider/model runtime policy | Pin runtime only when needed | [OC-PROVIDERS] |
+| Cost spike | Stop cron/web jobs first | Reduce model tier, output budget, and tool calls | [NEWS-REUTERS] |
+| Poor answer quality | Check prompt, source basis, and model tier | Upgrade model or narrow scope | [OA-GPT56] |
+| Context overflow | Start new isolated session | Split files/tasks into smaller batches | [SEC-PRISM] |
 
 ---
 
-## Documentation Rule
+## Reference Links
 
-All README/docs examples should use placeholders unless the model route is explicitly verified:
-
-```text
-Good: openai/<verified-model-id>
-Good: openai/gpt-5.6-sol, if verified in the live catalog
-Avoid: hardcoding a model route as universally available
-Avoid: hardcoding pricing without a date and source
-```
+[OC-OPENAI]: https://docs.openclaw.ai/providers/openai
+[OC-MODELS]: https://docs.openclaw.ai/cli/models
+[OC-PROVIDERS]: https://docs.openclaw.ai/concepts/model-providers
+[OA-GPT56]: https://openai.com/index/gpt-5-6/
+[OA-GPT56-HELP]: https://help.openai.com/en/articles/20001325-a-preview-of-gpt-56-sol-terra-and-luna
+[NEWS-REUTERS]: https://www.reuters.com/business/retail-consumer/openai-cuts-prices-smaller-models-businesses-scrutinize-ai-spend-2026-07-30/
+[SEC-PRISM]: https://arxiv.org/abs/2603.11853
