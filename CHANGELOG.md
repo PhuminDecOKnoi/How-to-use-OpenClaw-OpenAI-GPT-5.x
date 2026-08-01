@@ -35,4 +35,4 @@ All notable changes to this repository will be documented in this file.
 - Expanded cron guidance with model-tier selection, pricing/quota verification, stop conditions, and isolated-session control.
 - Expanded security guidance with agent threat model, tool permission standards, and incident note template.
 - Rewrote and condensed `openclaw_openai_gpt_5_x_lesson_th.md` into a source-linked Thai lesson aligned with README, GPT-5.6 Sol/Terra/Luna strategy, verification-first workflow, cost controls, security controls, workshop checklists, and point-level source links.
-- Added inline source markers such as `[OC-OPENAI]`, `[OC-MODELS]`, `[OA-GPT56]`, `[NEWS-REUTERS]`, and `[SEC-PRISM]` near supported claims, command patterns, pricing cautions, and security controls.
+- Added inline source markers such as `[OC-OPENAI]`, `[OC-MODELS]`, `[OC-PROVIDERS]`, `[OA-GPT56]`, `[OA-GPT56-HELP]`, `[NEWS-REUTERS]`, `[NEWS-AXIOS]`, `[NEWS-BI]`, and `[SEC-PRISM]` near supported claims, command patterns, pricing cautions, and security controls.
